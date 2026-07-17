@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TFHoi4</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; font-family: 'Segoe UI', system-ui, sans-serif; background: #0a0a1a; color: #e8ddd0; overflow: hidden; }
+
+.bg-slideshow {
+  position: fixed; inset: 0; z-index: 0;
+}
+.bg-slideshow img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; opacity: 0;
+  transition: opacity 1.5s ease-in-out;
+}
+.bg-slideshow img.active { opacity: 1; }
+.bg-overlay {
+  position: fixed; inset: 0; z-index: 1;
+  background: rgba(10,10,26,0.8);
+}
+
+body {
+  display: flex; align-items: center; justify-content: center;
+  position: relative; z-index: 2;
+}
+
+.container { text-align: center; position: relative; z-index: 2; }
+
+h1 {
+  font-size: 42px; font-weight: 700; letter-spacing: 2px;
+  margin-bottom: 6px;
+  background: linear-gradient(135deg, #c49a6c, #e8ddd0);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.subtitle {
+  color: #8a7a6a; font-size: 14px; margin-bottom: 40px; letter-spacing: 4px;
+  text-transform: uppercase;
+}
+
+.menu {
+  display: flex; flex-direction: column; gap: 14px; align-items: center;
+}
+.menu-btn {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  width: 340px; padding: 18px 24px;
+  background: linear-gradient(135deg, #1e1a16, #2a241e);
+  border: 1px solid #3a3028; border-radius: 10px;
+  color: #e8ddd0; font-size: 17px; font-weight: 500;
+  cursor: pointer; text-decoration: none;
+  transition: all .2s;
+}
+.menu-btn:hover {
+  background: linear-gradient(135deg, #2a241e, #3a3028);
+  border-color: #c49a6c; transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(196,154,108,0.15);
+}
+.menu-btn .icon { font-size: 26px; }
+.menu-btn .arrow { margin-left: auto; color: #6a5a4a; font-size: 14px; }
+
+.social {
+  display: flex; gap: 12px; margin-top: 36px; justify-content: center;
+}
+.social a {
+  width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; border: 1px solid #3a3028;
+  color: #8a7a6a; text-decoration: none; font-size: 18px;
+  transition: all .2s;
+}
+.social a:hover { border-color: #c49a6c; color: #e8ddd0; background: rgba(196,154,108,0.1); }
+
+.footer {
+  margin-top: 40px; font-size: 12px; color: #4a3d32;
+}
+.disclaimer {
+  margin-top: 20px; font-size: 11px; color: #4a3d32; line-height: 1.6;
+}
+.disclaimer a {
+  color: #8a7a6a; text-decoration: none;
+}
+.disclaimer a:hover { color: #c49a6c; }
+</style>
+</head>
+<body>
+<div class="bg-slideshow" id="bgSlideshow"></div>
+<div class="bg-overlay"></div>
+
+<div class="container">
+  <h1>TFHoi4</h1>
+  <div class="subtitle">EDITOR TOOLS</div>
+
+  <div class="menu">
+    <a class="menu-btn" href="index.html">
+      Создать древо фокусов
+      <span class="arrow">→</span>
+    </a>
+    <a class="menu-btn" href="convert.html">
+      Конвертировать в DDS
+      <span class="arrow">→</span>
+    </a>
+    <div class="social">
+      <a href="https://t.me/Ezmirupredloch_Bot" target="_blank" title="Telegram">T</a>
+      <a href="https://discord.gg/G3whZg9xst" target="_blank" title="Discord">D</a>
+    </div>
+  </div>
+
+  <div class="footer">v1.0</div>
+  <div class="disclaimer">
+    We are not affiliated with Paradox Interactive or Hearts of Iron IV.<br>
+    This tool only provides focus tree creation functionality.<br>
+    Contact: <a href="https://t.me/Ezmirupredloch_Bot" target="_blank">@Ezmirupredloch_Bot</a>
+  </div>
+</div>
+
+<script>
+(function() {
+  const container = document.getElementById('bgSlideshow');
+  const total = 5;
+  let current = 0;
+  
+  // Create img elements
+  for (let i = 1; i <= total; i++) {
+    const img = document.createElement('img');
+    img.src = 'bg/fon' + i + '.png';
+    img.dataset.index = i;
+    if (i === 1) img.classList.add('active');
+    container.appendChild(img);
+    // If image fails to load, hide it gracefully
+    img.onerror = function() { this.style.display = 'none'; };
+  }
+  
+  const images = container.querySelectorAll('img');
+  if (images.length < 2) return;
+  
+  function next() {
+    images[current].classList.remove('active');
+    current = (current + 1) % images.length;
+    images[current].classList.add('active');
+    const delay = 5000 + Math.floor(Math.random() * 2000);
+    setTimeout(next, delay);
+  }
+  
+  setTimeout(next, 5000 + Math.floor(Math.random() * 2000));
+})();
+</script>
+</body>
+</html>

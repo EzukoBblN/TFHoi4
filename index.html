@@ -1,0 +1,2587 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TFHoi4</title>
+<script>
+// Auto-generated icon path list (created by copy_icons.bat)
+// Will be populated by icons_list.js
+var ICON_PATHS = {};
+var BG_BACKGROUND = '';
+var BG_FRAME = '';
+</script>
+<script src="icons_list.js"></script>
+<script src="icon_mapping.js"></script>
+<script src="icon_mapping.js"></script>
+<script>
+// Fallback if icon_mapping.js not loaded
+var ICON_FILE_MAP = ICON_FILE_MAP || {};
+</script>
+<style>
+/* === RESET & BASE === */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #2a241e;
+  --bg2: #3a3028;
+  --bg3: #4a3d32;
+  --accent: #c49a6c;
+  --accent2: #8b7355;
+  --text: #e8ddd0;
+  --text2: #b8a99a;
+  --border: #4a3d32;
+  --success: #7a9a6a;
+  --warn: #c4a040;
+  --node-w: 306px;
+  --node-h: 119px;
+  --panel-w: 400px;
+}
+html, body { height: 100%; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+input, select, textarea, button { font-family: inherit; font-size: 13px; }
+/* Remove number input spinners */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+
+/* === LAYOUT === */
+.app { display: flex; flex-direction: column; height: 100vh; }
+/* === LAYOUT === */
+.app { display: flex; flex-direction: column; height: 100vh; }
+.toolbar {
+  display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+  flex-wrap: wrap;
+  background: url('materials/strategic_destruction_bg.png');
+  background-size: cover;
+  background-position: center;
+}
+.toolbar .title { font-size: 16px; font-weight: 700; color: var(--accent); margin-right: 16px; letter-spacing: 0.5px; }
+.toolbar .sep { width: 1px; height: 28px; background: var(--border); margin: 0 4px; }
+.toolbar button, .toolbar label.btn-like {
+  padding: 6px 14px; border: 1px solid var(--border); border-radius: 4px;
+  background: var(--bg3); color: var(--text); cursor: pointer; white-space: nowrap;
+  transition: background .15s, border-color .15s;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.toolbar button:hover, .toolbar label.btn-like:hover { background: var(--accent2); border-color: var(--accent2); }
+.toolbar input[type="file"] { display: none; }
+.toolbar .hint { font-size: 12px; color: var(--text2); margin-left: auto; }
+
+.main { display: flex; flex: 1; overflow: hidden; position: relative; }
+
+/* === CANVAS === */
+.canvas-container {
+  flex: 1; position: relative; overflow: hidden;
+  background: #0a0a1a;
+  background-image: 
+    linear-gradient(rgba(30, 30, 60, 0.5) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 30, 60, 0.5) 1px, transparent 1px),
+    radial-gradient(ellipse at center, #12122a 0%, #080818 60%, #050510 100%);
+  background-size: 40px 40px, 40px 40px, 100% 100%;
+  background-position: center center;
+  cursor: default;
+}
+.canvas-container.grabbing { cursor: grabbing; }
+.canvas-container svg { width: 100%; height: 100%; display: block; }
+
+/* === NODES === */
+@keyframes nodeAppear {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.node-group { cursor: pointer; }
+.node-scale { transform: scale(1); transition: transform 0.15s ease; }
+.node-group.created .node-scale { animation: nodeAppear 0.25s ease-out forwards; }
+.node-group:hover .node-scale { transform: scale(0.85); }
+.node-group.selected .node-scale { transform: scale(0.80); }
+.node-group.dragging .node-scale { opacity: .6; transform: scale(0.75); }
+.node-hit {
+  fill: transparent; stroke: none;
+  cursor: pointer;
+}
+/* Icon */
+.node-icon-img { width: 128px; height: 128px; }
+.node-icon-emoji { font-size: 44px; text-anchor: middle; dominant-baseline: central; }
+/* Focus ID label */
+.node-title {
+  fill: #d4c8b8; font-size: 16px; font-weight: 600;
+  text-anchor: middle; dominant-baseline: central;
+}
+/* Cost badge */
+.node-cost-text {
+  fill: #c4a040; font-size: 11px; font-weight: 600;
+  text-anchor: middle; dominant-baseline: central;
+}
+.node-cost-text.continuous { fill: #8ab4c0; }
+
+/* === EDGES === */
+.edge {
+  stroke: rgba(200, 185, 165, 0.5); stroke-width: 2.2; fill: none;
+  filter: drop-shadow(0 0 1px rgba(200,185,165,0.2));
+}
+.edge:hover { stroke: rgba(232, 221, 208, 0.8); stroke-width: 2.5; }
+.edge.mutex { stroke: rgba(196, 100, 80, 0.5); stroke-dasharray: 6,3; stroke-width: 2.2; }
+.edge.edge-or { stroke-dasharray: 10,5; stroke: rgba(180, 160, 140, 0.6); stroke-width: 2.8; }
+
+/* === CONTEXT MENU === */
+.context-menu {
+  position: fixed; z-index: 10000;
+  background: #3a3028; border: 1px solid #4a3d32; border-radius: 6px;
+  padding: 4px 0; min-width: 180px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.6);
+  display: none;
+}
+.context-menu.show { display: block; }
+.context-menu-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 16px; cursor: pointer;
+  font-size: 13px; color: #d4c8b8;
+  transition: background .1s;
+}
+.context-menu-item:hover { background: #4a3d32; color: #e8ddd0; }
+.context-menu-item .shortcut {
+  margin-left: auto; font-size: 11px; color: #8a7a6a;
+}
+.context-menu-sep {
+  height: 1px; background: #4a3d32; margin: 4px 8px;
+}
+/* Icon */
+.node-icon-img { width: 36px; height: 36px; }
+.node-icon-emoji { font-size: 28px; text-anchor: middle; dominant-baseline: central; }
+
+/* === ICON PICKER === */
+.icon-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  max-height: 300px; overflow-y: auto; padding: 4px 0;
+}
+.icon-grid::-webkit-scrollbar { width: 4px; }
+.icon-grid::-webkit-scrollbar-thumb { background: #4a3d32; border-radius: 2px; }
+.icon-grid { scrollbar-width: thin; scrollbar-color: #4a3d32 transparent; }
+.icon-option {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 8px 4px; border-radius: 6px; cursor: pointer;
+  border: 2px solid transparent; background: var(--bg);
+  transition: border-color .15s, background .15s;
+  text-align: center;
+}
+.icon-option:hover { border-color: var(--accent2); background: var(--bg3); }
+.icon-option.selected { border-color: var(--accent); background: var(--bg3); }
+.icon-option img, .icon-option .icon-fallback {
+  width: 56px; height: 56px; object-fit: contain;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px; line-height: 1;
+}
+.icon-option .icon-label {
+  font-size: 9px; color: var(--text2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 70px;
+}
+.icon-upload-area {
+  margin-top: 8px; padding: 10px;
+  border: 1px dashed var(--border); border-radius: 4px;
+  text-align: center; cursor: pointer; font-size: 12px; color: var(--text2);
+  transition: all .15s;
+}
+.icon-upload-area:hover { border-color: var(--accent); color: var(--accent); }
+.icon-preview { font-size: 48px; text-align: center; margin-bottom: 8px; }
+.icon-preview img { max-width: 64px; max-height: 64px; }
+
+/* === SVG NODE ICON === */
+.node-icon-img { width: 28px; height: 28px; }
+.node-icon-emoji { font-size: 20px; }
+
+/* === EDGES === */
+.edge { stroke: var(--border); stroke-width: 2; fill: none; }
+.edge:hover { stroke: var(--accent); stroke-width: 2.5; }
+.edge.mutex { stroke: var(--accent); stroke-dasharray: 6,3; }
+.edge-marker { fill: var(--border); }
+.edge:hover .edge-marker { fill: var(--accent); }
+.edge.mutex .edge-marker { fill: var(--accent); }
+
+/* === PANEL === */
+.panel {
+  width: 400px; border-left: 1px solid var(--border);
+  overflow-y: auto; flex-shrink: 0; display: flex; flex-direction: column;
+  background: url('materials/strategic_destruction_bg.png');
+  background-size: cover;
+  background-position: center;
+}
+.panel::-webkit-scrollbar { width: 6px; }
+.panel::-webkit-scrollbar-track { background: transparent; }
+.panel::-webkit-scrollbar-thumb { background: #4a3d32; border-radius: 3px; }
+.panel { scrollbar-width: thin; scrollbar-color: #4a3d32 transparent; }
+
+.panel-tabs {
+  display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.panel-tab {
+  flex: 1; padding: 10px; text-align: center; cursor: pointer;
+  background: transparent; border: none; color: var(--text2); font-size: 13px;
+  border-bottom: 2px solid transparent; transition: all .15s;
+}
+.panel-tab:hover { color: var(--text); background: rgba(255,255,255,.03); }
+.panel-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* Allow tooltips to escape panel overflow */
+.panel-body:has(.hint-icon:hover) { overflow: visible !important; }
+.panel-body::-webkit-scrollbar { width: 6px; }
+.panel-body::-webkit-scrollbar-thumb { background: #4a3d32; border-radius: 3px; }
+.panel-body { scrollbar-width: thin; scrollbar-color: #4a3d32 transparent; }
+
+.panel-empty {
+  display: flex; align-items: center; justify-content: center; height: 100%;
+  color: var(--text2); font-size: 14px; text-align: center; padding: 20px;
+}
+
+/* === FORM === */
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: 4px;
+  background: var(--bg); color: var(--text); outline: none; transition: border-color .15s;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); }
+.form-group textarea { min-height: 60px; resize: vertical; font-family: 'Consolas', 'Courier New', monospace; font-size: 12px; }
+.form-group .checkbox-row { display: flex; align-items: center; gap: 8px; }
+.form-group .checkbox-row input[type="checkbox"] { width: auto; accent-color: var(--accent); }
+.form-row { display: flex; gap: 10px; }
+.form-row .form-group { flex: 1; }
+.form-group label .hint-icon {
+  display: inline-flex; width: 16px; height: 16px;
+  background: rgba(180, 160, 140, 0.15); border: 1px solid rgba(180, 160, 140, 0.25);
+  border-radius: 50%;
+  align-items: center; justify-content: center;
+  font-size: 11px; font-style: normal; font-weight: 600;
+  color: #b8a99a; cursor: pointer;
+  margin-left: 5px; position: relative;
+  transition: background .15s;
+  vertical-align: middle;
+}
+.form-group label .hint-icon:hover { background: rgba(180, 160, 140, 0.3); }
+.form-group label .hint-icon::before {
+  content: attr(data-tip);
+  display: none;
+  position: absolute; left: 50%; top: calc(100% + 10px);
+  transform: translateX(-50%);
+  background: #2a241e; border: 1px solid #4a3d32;
+  border-radius: 6px; padding: 6px 10px;
+  font-size: 11px; font-weight: 400;
+  color: #d4c8b8;
+  white-space: normal;
+  max-width: 260px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.5);
+  z-index: 9999999;
+  line-height: 1.4;
+  pointer-events: none;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.form-group label .hint-icon:hover::before { display: block; }
+.form-group label .hint-icon::after {
+  content: '';
+  display: none;
+  position: absolute; left: 50%; top: calc(100% + 5px);
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-bottom-color: #4a3d32;
+  pointer-events: none;
+}
+.form-group label .hint-icon:hover::after { display: block; }
+
+/* === CUSTOM AUTOCOMPLETE === */
+.ac-wrapper { position: relative; flex: 1; display: flex; }
+.ac-input { width: 100%; }
+.ac-dropdown {
+  position: absolute; top: 100%; left: -1px; right: -1px; z-index: 9999;
+  background: #3a3028; border: 1px solid var(--border); border-top: none;
+  border-radius: 0 0 4px 4px; max-height: 200px; overflow-y: auto;
+  display: none; box-shadow: 0 4px 16px rgba(0,0,0,.5);
+}
+.ac-dropdown.show { display: block; }
+.ac-option {
+  padding: 6px 10px; cursor: pointer; font-size: 13px; color: var(--text);
+  transition: background .1s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ac-option:hover, .ac-option.highlighted { background: var(--accent2); color: #fff; }
+.ac-option .ac-match { color: var(--accent); font-weight: 700; }
+.ac-dropdown .ac-empty {
+  padding: 6px 10px; font-size: 12px; color: var(--text2); font-style: italic;
+}
+/* When input is focused inside a list-item, connect it visually */
+.list-item:focus-within { border-color: var(--accent); }
+
+/* === LIST EDITOR === */
+.list-editor { display: flex; flex-direction: column; gap: 4px; }
+.list-item {
+  display: flex; align-items: center; gap: 6px; padding: 4px 8px;
+  background: var(--bg); border-radius: 4px; border: 1px solid var(--border);
+}
+.list-item input { flex: 1; border: none; background: transparent; color: var(--text); padding: 4px 0; outline: none; font-size: 13px; }
+.list-item .remove-btn {
+  width: 20px; height: 20px; border: none; background: transparent;
+  color: var(--accent); cursor: pointer; font-size: 16px; line-height: 1;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+}
+.list-item .remove-btn:hover { background: rgba(233,69,96,.15); }
+.list-add {
+  padding: 6px; border: 1px dashed var(--border); border-radius: 4px;
+  background: transparent; color: var(--text2); cursor: pointer; text-align: center;
+  font-size: 12px; transition: all .15s;
+}
+.list-add:hover { border-color: var(--accent); color: var(--accent); }
+
+/* === TREE LIST === */
+.tree-list { display: flex; flex-direction: column; gap: 4px; }
+.tree-item {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+  background: var(--bg); border-radius: 4px; border: 1px solid var(--border);
+  cursor: pointer; transition: border-color .15s;
+}
+.tree-item:hover { border-color: var(--accent); }
+.tree-item .tree-icon { font-size: 20px; width: 28px; text-align: center; }
+.tree-item .tree-info { flex: 1; min-width: 0; }
+.tree-item .tree-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tree-item .tree-id { font-size: 11px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tree-item .del-btn {
+  width: 24px; height: 24px; border: none; background: transparent;
+  color: var(--text2); cursor: pointer; font-size: 16px; border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+}
+.tree-item .del-btn:hover { color: var(--accent); background: rgba(233,69,96,.1); }
+
+/* === TOAST === */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  padding: 10px 24px; border-radius: 6px; font-size: 14px; z-index: 9999;
+  background: var(--bg3); color: var(--text); border: 1px solid var(--border);
+  box-shadow: 0 4px 20px rgba(0,0,0,.4); opacity: 0; transition: opacity .3s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; pointer-events: auto; }
+.toast.success { border-color: var(--success); }
+.toast.error { border-color: var(--accent); }
+
+/* === MODAL === */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 1000;
+  display: none; align-items: center; justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--bg2); border-radius: 8px; border: 1px solid var(--border);
+  width: 90%; max-width: 600px; max-height: 80vh; display: flex; flex-direction: column;
+  box-shadow: 0 8px 40px rgba(0,0,0,.5);
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+}
+.modal-header h3 { font-size: 16px; }
+.modal-close { background: none; border: none; color: var(--text2); font-size: 22px; cursor: pointer; }
+.modal-close:hover { color: var(--accent); }
+.modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+.modal-footer {
+  display: flex; gap: 8px; justify-content: flex-end;
+  padding: 12px 20px; border-top: 1px solid var(--border);
+}
+.modal-footer button {
+  padding: 8px 20px; border-radius: 4px; border: 1px solid var(--border);
+  background: var(--bg); color: var(--text); cursor: pointer;
+}
+.modal-footer button:hover { background: var(--bg3); }
+.modal-footer button.primary { background: var(--accent); border-color: var(--accent); }
+.modal-footer button.primary:hover { opacity: .85; }
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  :root { --panel-w: 100%; }
+  .main { flex-direction: column-reverse; }
+  .panel { border-left: none; border-top: 1px solid var(--border); max-height: 50vh; }
+  .toolbar .hint { display: none; }
+}
+
+/* === SVG DEFS === */
+code { background: rgba(255,255,255,.05); padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <span class="title">TFHoi4</span>
+    <div class="sep"></div>
+    <button onclick="window.location.href='main.html'" style="color:var(--text2);font-size:12px;cursor:pointer;">← Назад</button>
+    <div class="sep"></div>
+    <button onclick="exportHOI4()">Скачать проект</button>
+    <input type="file" id="importFile" accept=".txt,.json" onchange="importFile(event)">
+    <label class="btn-like" onclick="document.getElementById('importFile').click()">Загрузить проект</label>
+    <button onclick="resetTree()" style="color:var(--accent);">✕ Новое древо</button>
+    <div class="sep"></div>
+    <button onclick="addFocusAtViewport()">Создать фокус</button>
+    <div class="sep"></div>
+    <button onclick="showSettings()">Настройки</button>
+    <span class="hint" id="focusCount">Фокусов: 0</span>
+    <span class="hint" id="zoomLevel" style="margin-left:8px;min-width:40px;text-align:right">100%</span>
+  </div>
+
+  <!-- Icon Banner -->
+  <div id="iconBanner" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:999;background:#16213e;border:2px solid #e94560;border-radius:12px;padding:30px 40px;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.8);flex-direction:column;align-items:center;gap:16px;max-width:400px;">
+    <div style="font-size:48px;">📂</div>
+    <h2 style="color:#eee;margin:0;">Иконки фокусов не загружены</h2>
+    <p style="color:#aaa;margin:0;font-size:14px;line-height:1.5;">
+      Нажмите кнопку ниже, чтобы выбрать папку <b style="color:#fff;">icons/</b><br>
+      (или запустите <b>copy_icons.bat</b> для копирования из игры)
+    </p>
+    <button onclick="document.getElementById('folderPicker').click()" style="padding:12px 32px;background:#e94560;border:none;border-radius:6px;color:#fff;font-size:16px;cursor:pointer;font-weight:600;">
+      📂 Выбрать папку с иконками
+    </button>
+    <button onclick="document.getElementById('iconBanner').style.display='none'" style="padding:8px 20px;background:transparent;border:1px solid #3a3a5a;border-radius:6px;color:#888;font-size:13px;cursor:pointer;">
+      Пропустить
+    </button>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="canvas-container" id="canvasContainer">
+      <svg id="svgCanvas">
+        <defs>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <marker id="arrowhead" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="var(--border)"/>
+          </marker>
+          <marker id="arrowhead-mutex" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="var(--accent)"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+
+    <!-- Panel -->
+    <div class="panel" id="panel">
+      <div class="panel-tabs">
+        <button class="panel-tab active" data-tab="properties" onclick="switchTab('properties')">Свойства</button>
+        <button class="panel-tab" data-tab="list" onclick="switchTab('list')">Список</button>
+        <button class="panel-tab" data-tab="tree-settings" onclick="switchTab('tree-settings')">Древо</button>
+      </div>
+      <div class="panel-body" id="panelBody">
+        <div class="panel-empty">Выберите фокус на древе<br>или нажмите «Добавить фокус»</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>⚙ Настройки древа</h3>
+      <button class="modal-close" onclick="closeModal('settingsModal')">&times;</button>
+    </div>
+    <div class="modal-body" id="settingsBody"></div>
+    <div class="modal-footer">
+      <button onclick="closeModal('settingsModal')">Отмена</button>
+      <button class="primary" onclick="saveSettings()">Сохранить</button>
+    </div>
+  </div>
+
+  <!-- GFX Modal -->
+  <div class="modal-overlay" id="gfxModal">
+    <div class="modal" style="max-width:800px;">
+      <div class="modal-header">
+        <h3>📦 .gfx файл для иконок</h3>
+        <button class="modal-close" onclick="closeModal('gfxModal')">&times;</button>
+      </div>
+      <div class="modal-body" style="max-height:60vh;overflow:auto;">
+        <p style="font-size:12px;color:var(--text2);margin-bottom:8px;">
+          Сохраните этот файл как <b>${data.treeId}_focus_icons.gfx</b> в папку <b>interface/</b> вашего мода.<br>
+          DDS файлы автоматически находятся игрой.<br>  Просто сохраните .gfx в папку <b>interface/</b> и .txt в <b>common/national_focus/</b>
+        </p>
+        <textarea id="gfxContent" readonly style="width:100%;min-height:300px;font-family:monospace;font-size:11px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:8px;resize:vertical;"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button onclick="closeModal('gfxModal')">Закрыть</button>
+        <button class="primary" onclick="downloadGFX()">💾 Скачать .gfx</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Context Menu -->
+  <div class="context-menu" id="contextMenu">
+    <div class="context-menu-item context-item-always" onclick="contextMenuAction('add')">➕ Создать фокус <span class="shortcut">Ctrl+A</span></div>
+    <div class="context-menu-item context-item-always" onclick="contextMenuAction('paste')">📋 Вставить <span class="shortcut">Ctrl+V</span></div>
+    <div class="context-menu-sep context-item-node" id="ctxSep1"></div>
+    <div class="context-menu-item context-item-node" onclick="contextMenuAction('copy')">📋 Копировать <span class="shortcut">Ctrl+C</span></div>
+    <div class="context-menu-item context-item-node" onclick="contextMenuAction('duplicate')">📄 Дублировать <span class="shortcut">Ctrl+D</span></div>
+    <div class="context-menu-item context-item-node" onclick="contextMenuAction('rename')">✏️ Переименовать</div>
+    <div class="context-menu-item context-item-node" onclick="contextMenuAction('delete')">🗑 Удалить <span class="shortcut">Del</span></div>
+  </div>
+
+  <script>
+// ============================================================
+// DATA MODEL - defined early to avoid temporal dead zone
+let data = {
+  treeId: 'my_focus_tree',
+  default: false,
+  resetOnCivilWar: false,
+  continuousX: 0,
+  continuousY: 0,
+  countryFactor: 1,
+  countryTag: '',
+  sharedFocus: '',
+  focuses: []
+};
+let focusIdCounter = 1;
+let selectedId = null;
+let panelMode = 'properties';
+let panX = 0, panY = 0;
+let isPanning = false, panStartX, panStartY;
+let nodeDragging = null;
+let scale = 1;
+const NODE_W = 306, NODE_H = 119;
+const GRID_X = 300, GRID_Y = 170;
+
+// Icon data
+let availableIcons = [];
+let iconScanComplete = false;
+let createdFocuses = new Set();
+
+const ICON_LIST = [
+  { id: 'GFX_goal_generic_industry', emoji: '🏭', label: 'Industry' },
+  { id: 'GFX_goal_generic_construction', emoji: '🚧', label: 'Construction' },
+  { id: 'GFX_goal_generic_infrastructure', emoji: '🛤️', label: 'Infrastructure' },
+  { id: 'GFX_goal_generic_allies_build_infantry', emoji: '🚶', label: 'Infantry' },
+  { id: 'GFX_goal_generic_army_doctrines', emoji: '📜', label: 'Army Doctrine' },
+  { id: 'GFX_goal_generic_navy_battleship', emoji: '🚢', label: 'Navy' },
+  { id: 'GFX_goal_generic_navy_doctrines_tactics', emoji: '⚓', label: 'Naval Doctrine' },
+  { id: 'GFX_goal_generic_air_fighter', emoji: '✈️', label: 'Air Fighter' },
+  { id: 'GFX_goal_generic_air_bomber', emoji: '💣', label: 'Bomber' },
+  { id: 'GFX_goal_generic_production', emoji: '🏭', label: 'Production' },
+  { id: 'GFX_goal_generic_trade', emoji: '📦', label: 'Trade' },
+  { id: 'GFX_goal_generic_manpower', emoji: '👥', label: 'Manpower' },
+];
+
+
+
+
+// GFX→filename mapping. Uses auto-generated map from game files, then known specials, then derived.
+function getFileName(gfxName) {
+  // Primary: auto-generated mapping from all game focus files
+  if (ICON_FILE_MAP && ICON_FILE_MAP[gfxName]) return ICON_FILE_MAP[gfxName];
+  // Secondary: known special mappings (GFX name != filename)
+  const SPECIAL = {
+    'GFX_goal_generic_industry': 'goal_generic_production',
+    'GFX_goal_generic_infrastructure': 'goal_generic_construct_infrastructure',
+    'GFX_goal_generic_refining': 'goal_generic_oil_refinery',
+    'GFX_goal_generic_allies_navy': 'goal_generic_navy_battleship',
+    'GFX_goal_generic_submarine': 'goal_generic_navy_submarine',
+    'GFX_goal_generic_navy_doctrines': 'goal_generic_navy_doctrines_tactics',
+    'GFX_goal_generic_capital_ship': 'goal_generic_navy_battleship',
+    'GFX_goal_generic_air_interceptor': 'goal_generic_air_fighter',
+    'GFX_goal_generic_air_cas': 'goal_generic_CAS',
+    'GFX_goal_generic_air_doctrines': 'goal_generic_air_doctrine',
+    'GFX_goal_generic_air_superiority': 'goal_generic_air_fighter2',
+    'GFX_goal_generic_air_transport': 'goal_generic_air_naval_bomber',
+    'GFX_focus_PLACEHOLDER': 'goal_generic_production',
+    'GFX_goal_generic_navy': 'goal_generic_navy_battleship',
+    'GFX_goal_generic_army': 'goal_generic_allies_build_infantry',
+    'GFX_goal_generic_air': 'goal_generic_air_fighter'
+  };
+  if (SPECIAL[gfxName]) return SPECIAL[gfxName];
+  // Default: strip GFX_ prefix and return MULTIPLE possible patterns
+  const stripped = gfxName.replace(/^GFX_/, '');
+  // Return primary pattern (the stripped name)
+  return stripped;
+}
+
+// Get MULTIPLE possible filenames for a GFX name (for fallback loading)
+function getFileNamePatterns(gfxName) {
+  const patterns = [];
+  // 1. Check special mapping
+  const special = getFileName(gfxName);
+  if (special) patterns.push(special);
+  // 2. Strip GFX_
+  const stripped = gfxName.replace(/^GFX_/, '');
+  if (stripped !== special) patterns.push(stripped);
+  // 3. Try lowercase
+  if (stripped.toLowerCase() !== stripped) patterns.push(stripped.toLowerCase());
+  // 4. Try without focus_ or goal_ prefix (just the suffix)
+  const noPrefix = stripped.replace(/^(goal_|focus_)/, '');
+  if (noPrefix !== stripped && noPrefix.length > 3) patterns.push(noPrefix);
+  // 5. Try goal_ prefix
+  if (!stripped.startsWith('goal_') && !stripped.startsWith('focus_')) {
+    patterns.push('goal_' + stripped);
+    patterns.push('focus_' + stripped);
+  }
+  return patterns;
+}
+
+// Load a single file via File object (from webkitdirectory)
+function decodeIconFile(file) {
+  return new Promise(resolve => {
+    const name = file.name.replace(/\.\w+$/, '');
+    const gfxId = 'GFX_' + name;
+    if (file.name.toLowerCase().endsWith('.png')) {
+      const reader = new FileReader();
+      reader.onload = e => addIcon(gfxId, e.target.result, name);
+      reader.readAsDataURL(file);
+    }
+    resolve();
+  });
+}
+
+function addIcon(id, url, label) {
+  const existing = availableIcons.find(i => i.id === id);
+  if (existing) {
+    if (!existing.hasImage && url) { existing.hasImage = true; existing.imgUrl = url; }
+    return;
+  }
+  availableIcons.push({
+    id, emoji: '📌',
+    label: label.replace(/^(goal_|focus_)/,'').replace(/_/g,' '),
+    hasImage: !!url, imgUrl: url || ''
+  });
+}
+
+// Load icons by user selecting the icons folder (works with file:// protocol)
+function loadIconsFromFolder(event) {
+  const files = event.target.files;
+  if (!files || !files.length) return;
+  const promises = [];
+  let count = 0;
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    // Also check bg/background and bg/frame
+    const name = f.name.replace(/\.\w+$/, '');
+    if (name === 'background' && f.name.endsWith('.png')) {
+      promises.push(new Promise(resolve => {
+        const r = new FileReader();
+        r.onload = e => {
+          if (e.target.result) applyBackground(e.target.result);
+          resolve();
+        };
+        r.readAsDataURL(f);
+      }));
+      continue;
+    }
+    if (name === 'frame' && f.name.endsWith('.png')) {
+      promises.push(new Promise(resolve => {
+        const r = new FileReader();
+        r.onload = e => {
+          if (e.target.result) window.frameTextureUrl = e.target.result;
+          resolve();
+        };
+        r.readAsDataURL(f);
+      }));
+      continue;
+    }
+    if (f.name.endsWith('.png')) {
+      promises.push(decodeIconFile(f));
+      count++;
+    }
+  }
+  Promise.all(promises).then(() => {
+    // Also add all files to available icons with their proper GFX names
+    iconScanComplete = true;
+    if (count > 0) {
+      // Save filenames to localStorage for auto-load on next startup
+      saveIconNames();
+      render();
+      checkIconBanner();
+      showToast(`Загружено ${count} иконок из папки!`, 'success');
+    }
+  });
+  event.target.value = '';
+}
+
+// Save discovered icon names to localStorage for persistence
+function saveIconNames() {
+  const names = availableIcons
+    .filter(i => i.hasImage)
+    .map(i => i.id.replace(/^GFX_/, ''));
+  try {
+    localStorage.setItem('ho4_icon_names', JSON.stringify(names));
+  } catch(e) {}
+}
+
+// Auto-scan: register ALL icons from available sources
+function autoScanIcons() {
+  // Source 1: localStorage (from previous folder selection)
+  const saved = localStorage.getItem('ho4_icon_names');
+  if (saved) {
+    try {
+      const names = JSON.parse(saved);
+      if (names && names.length > 100) {
+        loadIconNames(names);
+        return;
+      }
+    } catch(e) {}
+  }
+  
+  // Source 2: ICON_PATHS from icons_list.js
+  const allPaths = ICON_PATHS || {};
+  const keys = Object.keys(allPaths);
+  if (keys.length > 0) {
+    loadIconNames(keys);
+    return;
+  }
+  
+  // Source 3: Just ICON_LIST
+  ICON_LIST.forEach(ic => addIcon(ic.id, '', ic.label));
+  iconScanComplete = true;
+  checkIconBanner();
+}
+
+function loadIconNames(names) {
+  // Register all, load images in batches
+  ICON_LIST.forEach(ic => addIcon(ic.id, '', ic.label));
+  
+  let loaded = 0;
+  const total = names.length;
+  
+  function loadBatch(start) {
+    const end = Math.min(start + 100, total);
+    for (let i = start; i < end; i++) {
+      const name = names[i];
+      const gfxId = 'GFX_' + name;
+      if (!availableIcons.find(x => x.id === gfxId)) {
+        addIcon(gfxId, '', name.replace(/^(goal_|focus_)/,'').replace(/_/g,' '));
+      }
+      tryLoadFile(name, gfxId, () => {
+        loaded++;
+        if (loaded === total) {
+          iconScanComplete = true;
+          checkIconBanner();
+          render();
+        }
+      });
+    }
+    if (end < total) setTimeout(() => loadBatch(end), 50);
+  }
+  
+  loadBatch(0);
+}
+
+function tryLoadFile(fname, iconId, cb) {
+  // Try primary pattern first
+  tryLoadSingle(fname, iconId, (success) => {
+    if (success) { cb(true); return; }
+    // Failed - try alternative patterns
+    const patterns = getFileNamePatterns(iconId);
+    let tried = 0;
+    patterns.forEach(p => {
+      if (p === fname) return; // already tried
+      tried++;
+      tryLoadSingle(p, iconId, () => {
+        tried--;
+        if (tried === 0) cb(false);
+      });
+    });
+    if (tried === 0) cb(false);
+  });
+}
+
+function tryLoadSingle(fname, iconId, cb) {
+  const img = new Image();
+  img.onload = () => {
+    const url = `icons/${fname}.png`;
+    addIcon(iconId, url, fname);
+    // Also update the ICON_LIST mapped version if different
+    // e.g. GFX_goal_generic_navy_doctrines maps to file goal_generic_navy_doctrines_tactics
+    ICON_LIST.forEach(ic => {
+      const mapped = getFileName(ic.id);
+      if (mapped === fname && ic.id !== iconId) {
+        const existing = availableIcons.find(x => x.id === ic.id);
+        if (existing && !existing.hasImage) {
+          existing.hasImage = true;
+          existing.imgUrl = url;
+          existing.label = fname;
+        }
+      }
+    });
+    cb(true);
+  };
+  img.onerror = () => cb(false);
+  img.src = `icons/${fname}.png`;
+}
+
+// Auto-start: scan icons, then prompt user to select folder after 1s
+setTimeout(autoScanIcons, 100);
+
+// Show a prompt after 2s if no icons loaded
+setTimeout(() => {
+  const hasIcons = availableIcons.some(i => i.hasImage);
+  if (!hasIcons && !localStorage.getItem('dontAskFolder')) {
+    if (confirm('Иконки не найдены. Хотите выбрать папку с иконками?\n(выберите папку icons/ рядом с редактором)')) {
+      document.getElementById('folderPicker').click();
+    } else {
+      localStorage.setItem('dontAskFolder', '1');
+    }
+  }
+}, 2000);
+
+// Try to load icons from the game folder reference
+// User can put DDS files in icons/ folder after running copy_icons.bat
+// scanIcons was replaced by autoScanIcons above
+
+// ============================================================
+// BACKGROUND & FRAME TEXTURES
+// ============================================================
+function loadBackground() {
+  // Always try bg/background.png first (works from file://)
+  const bgImg = new Image();
+  bgImg.onload = () => applyBackground(bgImg.src);
+  bgImg.onerror = () => {};
+  bgImg.src = 'bg/background.png';
+}
+
+function applyBackground(url) {
+  const el = document.getElementById('canvasContainer');
+  el.style.backgroundColor = '#0a0a1a';
+  el.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url(${url})`;
+  el.style.backgroundSize = 'cover';
+  el.style.backgroundPosition = 'center';
+  el.style.backgroundRepeat = 'no-repeat';
+  el.style.opacity = '1';
+}
+
+function loadFrameTexture() {
+  if (BG_FRAME) {
+    const img = new Image();
+    img.onload = () => { window.frameTextureUrl = img.src; };
+    img.src = BG_FRAME.replace('.dds', '.png');
+    return;
+  }
+  const img = new Image();
+  img.onload = () => { window.frameTextureUrl = img.src; };
+  img.src = 'bg/frame.png';
+}
+
+// Icon data properly managed via addIcon() above
+
+// ============================================================
+// FOCUS MODEL
+// ============================================================
+function createFocus(x, y) {
+  const id = `focus_${focusIdCounter++}`;
+  return {
+    id,
+    icon: 'GFX_goal_generic_industry',
+    x: x || 0,
+    y: y || 0,
+    relativePositionId: '',
+    cost: 10,
+    prerequisites: [],
+    prerequisiteGroups: [],
+    mutuallyExclusive: [],
+    bypass: '',
+    availableIfCapitulated: false,
+    searchFilters: [],
+    available: '',
+    allowBranch: '',
+    aiWillDo: 'factor = 10',
+    completionReward: '',
+    continuous: false,
+    memo: ''
+  };
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function render() {
+  renderCanvas();
+  renderPanel();
+  updateFocusCount();
+}
+
+function updateFocusCount() {
+  document.getElementById('focusCount').textContent = `Фокусов: ${data.focuses.length}`;
+}
+
+function renderCanvas() {
+  const svg = document.getElementById('svgCanvas');
+  const container = document.getElementById('canvasContainer');
+  const w = container.clientWidth;
+  const h = container.clientHeight;
+
+  let edgesHtml = '';
+  let nodesHtml = '';
+
+  const nodeMap = {};
+  data.focuses.forEach(f => { nodeMap[f.id] = f; });
+
+  // Compute absolute positions (resolving relative_position_id chains)
+  const absPositions = {};
+  function getAbsPos(id, visited) {
+    if (absPositions[id]) return absPositions[id];
+    const f = nodeMap[id];
+    if (!f) return { x: 0, y: 0 };
+    if (!f.relativePositionId || !nodeMap[f.relativePositionId]) {
+      absPositions[id] = { x: f.x, y: f.y };
+      return absPositions[id];
+    }
+    // Prevent infinite recursion
+    if (visited && visited.has(id)) {
+      absPositions[id] = { x: f.x, y: f.y };
+      return absPositions[id];
+    }
+    const v = visited || new Set();
+    v.add(id);
+    const parent = getAbsPos(f.relativePositionId, v);
+    absPositions[id] = { x: parent.x + f.x, y: parent.y + f.y };
+    return absPositions[id];
+  }
+
+  const ox = panX + w / 2;
+  const oy = panY + h / 2 - 40;
+
+  data.focuses.forEach(f => {
+    const pos = getAbsPos(f.id);
+    const fx = pos.x * GRID_X + ox;
+    const fy = pos.y * GRID_Y + oy;
+
+    // Prerequisite edges (zigzag)
+    // If multiple prerequisite groups, edges within same group are AND (solid),
+    // different groups are OR (dashed)
+    const isOr = f.prerequisiteGroups && f.prerequisiteGroups.length > 1;
+    
+    // Build a set of which prerequisites are in OR groups
+    const orPrefs = new Set();
+    if (isOr) {
+      f.prerequisiteGroups.forEach(group => {
+        group.forEach(prefId => orPrefs.add(prefId));
+      });
+    }
+    
+    f.prerequisites.forEach(prefId => {
+      const pref = nodeMap[prefId];
+      if (!pref) return;
+      const ppos = getAbsPos(prefId);
+      const pfx = ppos.x * GRID_X + ox;
+      const pfy = ppos.y * GRID_Y + oy;
+      const d = routeOrthogonal(pfx, pfy, fx, fy - NODE_H/2, pos.x - ppos.x);
+      const cls = orPrefs.has(prefId) ? 'edge edge-or' : 'edge';
+      edgesHtml += `<path class="${cls}" d="${d}" data-from="${prefId}" data-to="${f.id}" marker-end="url(#arrowhead)"/>`;
+    });
+
+    // Mutually exclusive edges (once per pair)
+      const focusIndex = data.focuses.indexOf(f);
+      f.mutuallyExclusive.forEach(mid => {
+        const mf = nodeMap[mid];
+        if (!mf) return;
+        const mIdx = data.focuses.indexOf(mf);
+        if (mIdx < focusIndex) return;
+        const mpos = getAbsPos(mid);
+        const mx = mpos.x * GRID_X + ox;
+        const my = mpos.y * GRID_Y + oy;
+        const d = routeOrthogonal(fx, fy, mx, my - NODE_H/2, mpos.x - pos.x);
+        edgesHtml += `<path class="edge mutex" d="${d}" data-mutex="${f.id}|${mid}" marker-end="url(#arrowhead-mutex)"/>`;
+    });
+
+    const gameDays = f.cost * 7;
+    const costStr = f.continuous ? '∞' : `${gameDays}д`;
+    const iconHtml = getIconHtml(f.icon);
+    const title = f.id.length > 22 ? f.id.slice(0, 20) + '…' : f.id;
+    const cls = 'node-group' + (selectedId === f.id ? ' selected' : '') + (createdFocuses.has(f.id) ? ' created' : '');
+    const costCls = f.continuous ? 'node-cost-text continuous' : 'node-cost-text';
+    
+    nodesHtml += `
+      <g class="${cls}" transform="translate(${fx},${fy})" data-id="${f.id}"
+         onclick="selectFocus('${f.id}')" onmousedown="nodeMouseDown(event,'${f.id}')"
+         oncontextmenu="showContextMenu(event,'${f.id}')" ondblclick="editFocusName('${f.id}')">
+        <g class="node-scale">
+          <rect class="node-hit" x="${-NODE_W/2}" y="${-NODE_H/2}" width="${NODE_W}" height="${NODE_H}" rx="8" ry="8"/>
+        ${iconHtml}
+        <text class="node-title" x="0" y="53">${escXml(title)}</text>
+        <text class="${costCls}" x="0" y="69">${costStr}</text>
+        </g>
+      </g>`;
+  });
+
+  // Resolve CSS variable colors for SVG markers
+  const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#2a2a4a';
+  const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#e94560';
+
+  svg.innerHTML = `
+    <defs>
+      <filter id="glow">
+        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+        <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <marker id="arrowhead" viewBox="0 0 10 7" refX="9" refY="3.5" markerWidth="7" markerHeight="6" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="${borderColor}"/>
+      </marker>
+      <marker id="arrowhead-mutex" viewBox="0 0 10 7" refX="9" refY="3.5" markerWidth="7" markerHeight="6" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="${accentColor}"/>
+      </marker>
+    </defs>
+    <g transform="scale(${scale})">${edgesHtml}</g>
+    <g transform="scale(${scale})">${nodesHtml}</g>`;
+}
+
+function centerTree() {
+  if (data.focuses.length === 0) { panX = 0; panY = 0; return; }
+  // Compute absolute positions
+  const nodeMap = {};
+  data.focuses.forEach(f => { nodeMap[f.id] = f; });
+  function getAbsPos(id, visited) {
+    const f = nodeMap[id];
+    if (!f) return { x: 0, y: 0 };
+    if (!f.relativePositionId || !nodeMap[f.relativePositionId]) return { x: f.x, y: f.y };
+    if (visited && visited.has(id)) return { x: f.x, y: f.y };
+    const v = visited || new Set();
+    v.add(id);
+    const p = getAbsPos(f.relativePositionId, v);
+    return { x: p.x + f.x, y: p.y + f.y };
+  }
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  data.focuses.forEach(f => {
+    const pos = getAbsPos(f.id);
+    if (pos.x < minX) minX = pos.x;
+    if (pos.x > maxX) maxX = pos.x;
+    if (pos.y < minY) minY = pos.y;
+    if (pos.y > maxY) maxY = pos.y;
+  });
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+  panX = -(cx * GRID_X);
+  panY = -(cy * GRID_Y);
+}
+
+function routeOrthogonal(x1, y1, x2, y2, dx) {
+  // HOI4-style orthogonal routing
+  // Всегда: вниз от родителя → горизонтально → вниз в ребёнка
+  // y1 - центр родителя, y2 - верхняя грань ребёнка (уже смещено на -NODE_H/2)
+  if (Math.abs(dx) <= 0.5) {
+    // Одна колонка: прямая вертикаль от низа родителя до верха ребёнка
+    const parentBottom = y1 + NODE_H/2;
+    const childTop = y2;
+    return `M ${x1} ${parentBottom} L ${x1} ${childTop}`;
+  }
+  // START от низа родительского узла
+  const parentBottom = y1 + NODE_H/2;
+  // Середина по вертикали между parent-bottom и child-top
+  const midY = (parentBottom + y2) / 2;
+  // Z-путь: вниз от низа родителя → горизонтально → вниз к верху ребёнка
+  return `M ${x1} ${parentBottom} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}`;
+}
+
+function getIconInfo(iconId) {
+  // Check if already registered
+  let found = availableIcons.find(i => i.id === iconId);
+  if (found) return found;
+  
+  // Register placeholder immediately
+  const label = iconId.replace(/^GFX_/, '').replace(/^(goal_|focus_)/, '').replace(/_/g, ' ');
+  const placeholder = { id: iconId, emoji: '📌', label, hasImage: false, imgUrl: '' };
+  availableIcons.push(placeholder);
+  
+  // Lazy load: try to find the actual image
+  const patterns = getFileNamePatterns(iconId);
+  let tried = 0;
+  patterns.forEach(fname => {
+    tried++;
+    const img = new Image();
+    img.onload = () => {
+      placeholder.hasImage = true;
+      placeholder.imgUrl = `icons/${fname}.png`;
+      // Also update ICON_LIST entries
+      ICON_LIST.forEach(ic => {
+        if (getFileName(ic.id) === fname && ic.id !== iconId) {
+          const e = availableIcons.find(x => x.id === ic.id);
+          if (e && !e.hasImage) { e.hasImage = true; e.imgUrl = placeholder.imgUrl; }
+        }
+      });
+      render();
+    };
+    img.src = `icons/${fname}.png`;
+  });
+  
+  return placeholder;
+}
+
+// Load all icons referenced by current focuses
+function loadFocusIcons() {
+  const ids = new Set();
+  data.focuses.forEach(f => {
+    if (f.icon) ids.add(f.icon);
+    f.prerequisites.forEach(p => {
+      const pref = data.focuses.find(x => x.id === p);
+      if (pref && pref.icon) ids.add(pref.icon);
+    });
+  });
+  ids.forEach(id => {
+    const info = availableIcons.find(i => i.id === id);
+    if (!info || !info.hasImage) getIconInfo(id);
+  });
+}
+
+// Show banner when no icons are loaded
+function checkIconBanner() {
+  const hasAny = availableIcons.some(i => i.hasImage);
+  const banner = document.getElementById('iconBanner');
+  if (!banner) return;
+  banner.style.display = hasAny ? 'none' : 'flex';
+}
+
+function getIconHtml(iconId) {
+  const info = getIconInfo(iconId);
+  if (info.hasImage) {
+    return `<image href="${info.imgUrl}" x="-64" y="-80" width="128" height="128"/>`;
+  }
+  return `<text class="node-icon-emoji" x="0" y="-28" text-anchor="middle">${escXml(info.emoji)}</text>`;
+}
+
+function getIconPreview(iconId) {
+  const info = getIconInfo(iconId);
+  if (info.hasImage) {
+    return `<img src="${info.imgUrl}" alt="${iconId}" style="max-width:80px;max-height:80px;"/>`;
+  }
+  return `<span style="font-size:64px;">${info.emoji}</span>`;
+}
+
+function renderIconOption(ic, selectedId) {
+  const sel = ic.id === selectedId ? 'selected' : '';
+  const content = ic.hasImage
+    ? `<img src="${ic.imgUrl}" alt="${ic.id}"/>`
+    : `<span class="icon-fallback">${ic.emoji}</span>`;
+  return `<div class="icon-option ${sel}" onclick="selectIcon('${ic.id}')" title="${ic.id}">
+    ${content}
+    <span class="icon-label">${ic.label}</span>
+  </div>`;
+}
+
+function selectIcon(id) {
+  updateField('icon', id);
+}
+
+// Load saved icons from localStorage on startup
+function loadSavedIcons() {
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('hoi4_icon_')) {
+      const iconId = key.replace('hoi4_icon_', '');
+      const dataUrl = localStorage.getItem(key);
+      const existing = availableIcons.find(ic => ic.id === iconId);
+      if (existing) {
+        existing.hasImage = true;
+        existing.imgUrl = dataUrl;
+      } else {
+        availableIcons.push({
+          id: iconId,
+          emoji: '📌',
+          label: iconId.replace('GFX_','').replace(/_/g,' '),
+          hasImage: true,
+          imgUrl: dataUrl
+        });
+      }
+    }
+  }
+}
+loadSavedIcons();
+
+function escXml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ============================================================
+// PANEL
+// ============================================================
+function switchTab(tab) {
+  panelMode = tab;
+  document.querySelectorAll('.panel-tab').forEach(el => el.classList.toggle('active', el.dataset.tab === tab));
+  renderPanel();
+}
+
+function renderPanel() {
+  const body = document.getElementById('panelBody');
+  if (panelMode === 'tree-settings') {
+    body.innerHTML = renderTreeSettings();
+    return;
+  }
+  if (panelMode === 'list') {
+    body.innerHTML = renderFocusList();
+    return;
+  }
+  // Properties
+  if (!selectedId || !data.focuses.find(f => f.id === selectedId)) {
+    body.innerHTML = '<div class="panel-empty">Выберите фокус на древе</div>';
+    return;
+  }
+  const f = data.focuses.find(f => f.id === selectedId);
+  if (!f) { body.innerHTML = '<div class="panel-empty">Фокус не найден</div>'; return; }
+  body.innerHTML = renderFocusProperties(f);
+}
+
+function renderFocusProperties(f) {
+  return `
+    <div class="form-group">
+      <label>ID фокуса <span class="hint-icon" data-tip="Уникальный идентификатор фокуса. Используется в prerequisite, mutually_exclusive и т.д.">i</span></label>
+      <input value="${escXml(f.id)}" onchange="updateField('id', this.value)" placeholder="unique_focus_id"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Позиция X <span class="hint-icon" data-tip="Координата X на древе фокусов. Если указан relative_position_id - это смещение относительно него.">i</span></label>
+        <input type="number" value="${f.x}" onchange="updateField('x', parseInt(this.value)||0)"/>
+      </div>
+      <div class="form-group">
+        <label>Позиция Y <span class="hint-icon" data-tip="Координата Y на древе фокусов.">i</span></label>
+        <input type="number" value="${f.y}" onchange="updateField('y', parseInt(this.value)||0)"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Иконка</label>
+      <div class="icon-preview" id="iconPreview">${getIconPreview(f.icon)}</div>
+      <div class="icon-grid" id="iconGrid">
+        ${availableIcons.filter(ic => ic.hasImage || ICON_LIST.find(x => x.id === ic.id)).map(ic => renderIconOption(ic, f.icon)).join('')}
+      </div>
+      <div style="font-size:11px;color:var(--text2);margin-top:6px;text-align:center;">
+        Загружено: ${availableIcons.filter(i => i.hasImage).length} иконок
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Стоимость (cost) <span class="hint-icon" data-tip="Внутреннее значение cost (1-70). В игре отображается cost×7 дней.">i</span></label>
+        <input type="number" min="1" max="70" value="${f.cost}" onchange="updateField('cost', parseInt(this.value)||10)"/>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px;">В игре: <b>${f.cost * 7} дней</b> (cost=${f.cost})</div>
+      </div>
+      <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:7px;">
+        <label class="checkbox-row">
+          <input type="checkbox" ${f.continuous ? 'checked' : ''} onchange="updateField('continuous', this.checked)"/>
+          Бесконечный
+        </label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="checkbox-row">
+        <input type="checkbox" ${f.availableIfCapitulated ? 'checked' : ''} onchange="updateField('availableIfCapitulated', this.checked)"/>
+        Доступен при капитуляции
+      </label>
+    </div>
+    <div class="form-group">
+      <label>Относительная позиция (relative_position_id) <span class="hint-icon" data-tip="ID фокуса, относительно которого задаются координаты X и Y. Начните вводить — появится список.">i</span></label>
+      <div class="ac-wrapper">
+        <input class="ac-input" value="${escXml(f.relativePositionId)}" data-options='${escXml(JSON.stringify(data.focuses.filter(x => x.id !== f.id).map(x => x.id)))}' onchange="updateField('relativePositionId', this.value)" placeholder="focus_id"/>
+        <div class="ac-dropdown"></div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Требования (prerequisites) <span class="hint-icon" data-tip="Какие фокусы нужно выполнить перед этим. Начните вводить — появится список фокусов. Несколько в одном блоке = И, разные блоки = ИЛИ.">i</span></label>
+      ${renderFocusListEditor('prerequisites', f.prerequisites, 'focus')}
+    </div>
+
+    <div class="form-group">
+      <label>Взаимоисключения (mutually_exclusive) <span class="hint-icon" data-tip="Фокусы, которые нельзя выполнить, если этот уже выполнен. Начните вводить — появится список.">i</span></label>
+      ${renderFocusListEditor('mutuallyExclusive', f.mutuallyExclusive, 'focus')}
+    </div>
+
+    <div class="form-group">
+      <label>Поисковые фильтры (search_filters) <span class="hint-icon" data-tip="Фильтры для отображения в игре. Начните вводить — появится список известных фильтров.">i</span></label>
+      ${renderFocusListEditor('searchFilters', f.searchFilters, 'filter')}
+    </div>
+
+    <div class="form-group">
+      <label>Bypass (условие пропуска) <span class="hint-icon" data-tip="Условие, при котором фокус автоматически считается выполненным.">i</span></label>
+      <textarea rows="2" onchange="updateField('bypass', this.value)" placeholder="has_tech = motorised_infantry">${escXml(f.bypass)}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Available (условия доступности) <span class="hint-icon" data-tip="Условия, при которых фокус доступен для назначения.">i</span></label>
+      <textarea rows="3" onchange="updateField('available', this.value)" placeholder="tag = GER">${escXml(f.available)}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Allow Branch (условия ветки) <span class="hint-icon" data-tip="Условия, при которых ветка фокусов видна.">i</span></label>
+      <textarea rows="2" onchange="updateField('allowBranch', this.value)">${escXml(f.allowBranch)}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label>AI Will Do <span class="hint-icon" data-tip="Вес (factor), с которым ИИ выбирает этот фокус. Чем выше, тем приоритетнее.">i</span></label>
+      <textarea rows="2" onchange="updateField('aiWillDo', this.value)">${escXml(f.aiWillDo)}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Completion Reward (награда) <span class="hint-icon" data-tip="Эффекты, которые срабатывают при завершении фокуса.">i</span></label>
+      <textarea rows="6" onchange="updateField('completionReward', this.value)" placeholder="add_political_power = 100&#10;add_stability = 0.05">${escXml(f.completionReward)}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Заметка (не влияет на экспорт)</label>
+      <textarea rows="2" onchange="updateField('memo', this.value)" placeholder="Заметки для себя...">${escXml(f.memo)}</textarea>
+    </div>
+  `;
+}
+
+// Known HOI4 search filters for autocomplete
+const KNOWN_FILTERS = [
+  'FOCUS_FILTER_POLITICAL', 'FOCUS_FILTER_INDUSTRY', 'FOCUS_FILTER_RESEARCH',
+  'FOCUS_FILTER_WAR', 'FOCUS_FILTER_ARMY', 'FOCUS_FILTER_NAVY',
+  'FOCUS_FILTER_AIR', 'FOCUS_FILTER_STABILITY', 'FOCUS_FILTER_MILITARY'
+];
+
+function renderListEditor(field, items, placeholder) {
+  const html = items.map((item, i) => `
+    <div class="list-item">
+      <input value="${escXml(item)}" onchange="updateListItem('${field}', ${i}, this.value)" placeholder="${placeholder}"/>
+      <button class="remove-btn" onclick="removeListItem('${field}', ${i})">&times;</button>
+    </div>`).join('');
+  return `<div class="list-editor">
+    ${html}
+    <button class="list-add" onclick="addListItem('${field}')">+ Добавить</button>
+  </div>`;
+}
+
+// Enhanced list editor with autocomplete dropdown
+function renderFocusListEditor(field, items, type) {
+  const placeholder = type === 'filter' ? 'FOCUS_FILTER_...' : 'id фокуса';
+  // Build all options as JSON for data-options
+  let allOptions = [];
+  if (type === 'focus') {
+    allOptions = data.focuses.map(f => f.id);
+  } else if (type === 'filter') {
+    allOptions = KNOWN_FILTERS;
+  }
+  const optionsJson = escXml(JSON.stringify(allOptions));
+  
+  const html = items.map((item, i) => `
+    <div class="list-item">
+      <div class="ac-wrapper">
+        <input class="ac-input" value="${escXml(item)}" data-options='${optionsJson}' onchange="updateListItem('${field}', ${i}, this.value)" placeholder="${placeholder}"/>
+        <div class="ac-dropdown"></div>
+      </div>
+      <button class="remove-btn" onclick="removeListItem('${field}', ${i})">&times;</button>
+    </div>`).join('');
+  
+  return `<div class="list-editor">
+    ${html}
+    <button class="list-add" onclick="addListItem('${field}')">+ Добавить</button>
+  </div>`;
+}
+
+function renderFocusList() {
+  if (data.focuses.length === 0) {
+    return '<div class="panel-empty">Нет фокусов.<br>Нажмите «Добавить фокус»</div>';
+  }
+  const items = data.focuses.map(f => {
+    const info = getIconInfo(f.icon);
+    const iconHtml = info.hasImage
+      ? `<img src="${info.imgUrl}" style="width:24px;height:24px;vertical-align:middle;"/>`
+      : info.emoji;
+    const daysDisplay = f.continuous ? '∞' : `${f.cost} (${f.cost * 7}д)`;
+    return `<div class="tree-item" onclick="selectFocus('${f.id}')">
+      <span class="tree-icon">${iconHtml}</span>
+      <div class="tree-info">
+        <div class="tree-name">${escXml(f.id)}</div>
+        <div class="tree-id">${escXml(f.icon)} · ${daysDisplay}</div>
+      </div>
+      <button class="del-btn" onclick="event.stopPropagation(); deleteFocus('${f.id}')">&times;</button>
+    </div>`;
+  }).join('');
+  return `<div class="tree-list">${items}</div>`;
+}
+
+function renderTreeSettings() {
+  return `
+    <div class="form-group">
+      <label>ID древа (focus_tree id) <span class="hint-icon" data-tip="Уникальный ID древа фокусов. Для Германии используйте german_focus, для СССР - soviet_focus и т.д.">i</span></label>
+      <input value="${escXml(data.treeId)}" onchange="data.treeId=this.value;render()" placeholder="my_focus_tree"/>
+    </div>
+    <div class="form-group">
+      <label>Shared Focus <span class="hint-icon" data-tip="Общий фокус, который отображается в нескольких деревьях.">i</span></label>
+      <input value="${escXml(data.sharedFocus)}" onchange="data.sharedFocus=this.value;render()" placeholder="SSB_shared_focus"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Continuous Focus X <span class="hint-icon" data-tip="Позиция кнопки бесконечного фокуса по X.">i</span></label>
+        <input type="number" value="${data.continuousX}" onchange="data.continuousX=parseInt(this.value)||0;render()"/>
+      </div>
+      <div class="form-group">
+        <label>Continuous Focus Y <span class="hint-icon" data-tip="Позиция кнопки бесконечного фокуса по Y.">i</span></label>
+        <input type="number" value="${data.continuousY}" onchange="data.continuousY=parseInt(this.value)||0;render()"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Тэг страны <span class="hint-icon" data-tip="Трёхбуквенный код страны (GER, SOV, USA...)">i</span></label>
+      <input value="${escXml(data.countryTag)}" onchange="data.countryTag=this.value;render()" placeholder="GER"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Country Factor <span class="hint-icon" data-tip="Множитель вероятности выбора этого древа для страны.">i</span></label>
+        <input type="number" step="0.1" value="${data.countryFactor}" onchange="data.countryFactor=parseFloat(this.value)||0;render()"/>
+      </div>
+      <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:7px;">
+        <label class="checkbox-row">
+          <input type="checkbox" ${data.default ? 'checked' : ''} onchange="data.default=this.checked;render()"/>
+          Default
+        </label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="checkbox-row">
+        <input type="checkbox" ${data.resetOnCivilWar ? 'checked' : ''} onchange="data.resetOnCivilWar=this.checked;render()"/>
+        Reset on Civil War
+      </label>
+    </div>
+    <div class="form-group">
+      <label>Текущее древо фокусов</label>
+      <div style="font-size:12px;color:var(--text2);margin-top:4px;">
+        <code>${data.focuses.length}</code> фокусов
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
+// ACTIONS
+// ============================================================
+function resetTree() {
+  if (!confirm('Вы уверены? Все фокусы будут удалены.')) return;
+  data.focuses = [];
+  data.treeId = 'my_focus_tree';
+  data.default = false;
+  data.resetOnCivilWar = false;
+  data.continuousX = 0;
+  data.continuousY = 0;
+  data.countryFactor = 1;
+  data.countryTag = '';
+  data.sharedFocus = '';
+  selectedId = null;
+  centerTree();
+  render();
+  showToast('Древо очищено', 'success');
+}
+
+// ============================================================
+function selectFocus(id) {
+  selectedId = id;
+  panelMode = 'properties';
+  document.querySelectorAll('.panel-tab').forEach(el => el.classList.toggle('active', el.dataset.tab === 'properties'));
+  render();
+}
+
+function addFocus() {
+  // Find a good position
+  let nx = 0, ny = 0;
+  if (data.focuses.length > 0) {
+    const last = data.focuses[data.focuses.length - 1];
+    nx = last.x + 2;
+    ny = last.y;
+    if (nx > 6) { nx = 0; ny = last.y + 2; }
+  }
+  const f = createFocus(nx, ny);
+  data.focuses.push(f);
+  createdFocuses.add(f.id);
+  setTimeout(() => { createdFocuses.delete(f.id); if (!selectedId) renderCanvas(); }, 350);
+  selectedId = f.id;
+  panelMode = 'properties';
+  document.querySelectorAll('.panel-tab').forEach(el => el.classList.toggle('active', el.dataset.tab === 'properties'));
+  render();
+  showToast(`Добавлен фокус ${f.id}`, 'success');
+}
+
+function addFocusAtViewport() {
+  // Calculate viewport center in grid coordinates
+  const container = document.getElementById('canvasContainer');
+  const cx = container.clientWidth / 2;
+  const cy = container.clientHeight / 2 - 40;
+  const gridX = Math.round((-panX) / GRID_X);
+  const gridY = Math.round((-panY) / GRID_Y);
+  
+  // Find a free spot near viewport center
+  let nx = gridX, ny = gridY;
+  let attempts = 0;
+  const taken = new Set(data.focuses.map(f => `${f.x},${f.y}`));
+  while (taken.has(`${nx},${ny}`) && attempts < 50) {
+    nx += 2;
+    if (nx > gridX + 8) { nx = gridX - 4; ny += 2; }
+    attempts++;
+  }
+  
+  const f = createFocus(nx, ny);
+  data.focuses.push(f);
+  createdFocuses.add(f.id);
+  setTimeout(() => { createdFocuses.delete(f.id); if (!selectedId) renderCanvas(); }, 350);
+  selectedId = f.id;
+  panelMode = 'properties';
+  document.querySelectorAll('.panel-tab').forEach(el => el.classList.toggle('active', el.dataset.tab === 'properties'));
+  render();
+  showToast(`Добавлен фокус ${f.id}`, 'success');
+}
+
+function deleteSelected() {
+  if (!selectedId) return;
+  deleteFocus(selectedId);
+}
+
+function deleteFocus(id) {
+  if (!confirm(`Удалить фокус "${id}"?`)) return;
+  // Remove from prerequisites/mutex of others
+  data.focuses.forEach(f => {
+    f.prerequisites = f.prerequisites.filter(p => p !== id);
+    f.mutuallyExclusive = f.mutuallyExclusive.filter(m => m !== id);
+  });
+  data.focuses = data.focuses.filter(f => f.id !== id);
+  if (selectedId === id) {
+    selectedId = data.focuses.length > 0 ? data.focuses[0].id : null;
+  }
+  render();
+  showToast(`Фокус "${id}" удалён`);
+}
+
+function updateField(field, value) {
+  const f = data.focuses.find(f => f.id === selectedId);
+  if (!f) return;
+  // Prevent duplicate IDs
+  if (field === 'id') {
+    const newId = value.trim();
+    if (!newId) { showToast('ID не может быть пустым', 'error'); return; }
+    if (newId !== f.id && data.focuses.some(x => x.id === newId)) {
+      showToast('Ошибка: фокус с ID "' + newId + '" уже существует', 'error');
+      return;
+    }
+    // Update references in ALL other focuses before changing the ID
+    const oldId = f.id;
+    data.focuses.forEach(x => {
+      x.prerequisites = x.prerequisites.map(p => p === oldId ? newId : p);
+      x.mutuallyExclusive = x.mutuallyExclusive.map(m => m === oldId ? newId : m);
+    });
+    f.id = newId;
+  } else {
+    f[field] = value;
+  }
+  render();
+}
+
+function addListItem(field) {
+  const f = data.focuses.find(f => f.id === selectedId);
+  if (!f) return;
+  f[field].push('');
+  renderPanel();
+}
+
+function removeListItem(field, idx) {
+  const f = data.focuses.find(f => f.id === selectedId);
+  if (!f) return;
+  const removed = f[field][idx];
+  f[field].splice(idx, 1);
+  // Also remove reverse link for mutual exclusivity
+  if (field === 'mutuallyExclusive' && removed) {
+    const target = data.focuses.find(x => x.id === removed);
+    if (target) {
+      target.mutuallyExclusive = target.mutuallyExclusive.filter(m => m !== f.id);
+    }
+  }
+  render();
+}
+
+function updateListItem(field, idx, value) {
+  const f = data.focuses.find(f => f.id === selectedId);
+  if (!f) return;
+  if (idx < f[field].length) {
+    const oldVal = f[field][idx];
+    f[field][idx] = value;
+    // Auto-add reverse link for mutual exclusivity (HOI4 requires two-way)
+    if (field === 'mutuallyExclusive' && value && value !== oldVal) {
+      const target = data.focuses.find(x => x.id === value);
+      if (target) {
+        // Remove old reverse link
+        if (oldVal) {
+          const oldTarget = data.focuses.find(x => x.id === oldVal);
+          if (oldTarget) {
+            oldTarget.mutuallyExclusive = oldTarget.mutuallyExclusive.filter(m => m !== f.id);
+          }
+        }
+        // Add new reverse link
+        if (!target.mutuallyExclusive.includes(f.id)) {
+          target.mutuallyExclusive.push(f.id);
+        }
+      }
+    }
+  }
+  render();
+}
+
+// ============================================================
+// CANVAS INTERACTION
+// ============================================================
+// Left click on empty space = deselect focus
+document.getElementById('canvasContainer').addEventListener('click', e => {
+  if (e.button === 0 && !e.target.closest('.node-group')) {
+    selectedId = null;
+    renderPanel();
+    renderCanvas();
+  }
+});
+
+// Middle click = pan
+document.getElementById('canvasContainer').addEventListener('mousedown', e => {
+  if (e.button === 1) {
+    e.preventDefault();
+    isPanning = true;
+    panStartX = e.clientX - panX * scale;
+    panStartY = e.clientY - panY * scale;
+    document.getElementById('canvasContainer').classList.add('grabbing');
+  }
+});
+
+document.addEventListener('mousemove', e => {
+  if (nodeDragging) {
+    const container = document.getElementById('canvasContainer');
+    const rect = container.getBoundingClientRect();
+    const cx = container.clientWidth / 2;
+    const cy = container.clientHeight / 2 - 40;
+    const px = (e.clientX - rect.left) / scale;
+    const py = (e.clientY - rect.top) / scale;
+    const nx = Math.round((px - panX - cx) / GRID_X);
+    const ny = Math.round((py - panY - cy) / GRID_Y);
+    if (nodeDragging.relativePositionId) {
+      nodeDragging.relativePositionId = ''; // manual move makes position absolute
+    }
+    // Also detach any nodes that depend on this one (clear their relativePositionId too)
+    data.focuses.forEach(x => {
+      if (x.relativePositionId === nodeDragging.id) {
+        x.relativePositionId = '';
+      }
+    });
+    nodeDragging.x = nx;
+    nodeDragging.y = ny;
+    render();
+    return;
+  }
+  if (isPanning) {
+    panX = (e.clientX - panStartX) / scale;
+    panY = (e.clientY - panStartY) / scale;
+    render();
+  }
+});
+
+document.addEventListener('mouseup', () => {
+  isPanning = false;
+  nodeDragging = null;
+  document.getElementById('canvasContainer').classList.remove('grabbing');
+  document.querySelectorAll('.node-group').forEach(el => el.classList.remove('dragging'));
+});
+
+// Zoom with mouse wheel
+document.getElementById('canvasContainer').addEventListener('wheel', e => {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? 0.9 : 1.1;
+  const newScale = Math.min(Math.max(scale * delta, 0.25), 3);
+  if (newScale !== scale) {
+    // Zoom towards mouse position
+    const rect = document.getElementById('canvasContainer').getBoundingClientRect();
+    const mx = (e.clientX - rect.left);
+    const my = (e.clientY - rect.top);
+    panX = mx / newScale - (mx - panX * scale) / scale;
+    panY = my / newScale - (my - panY * scale) / scale;
+    scale = newScale;
+    render();
+    document.getElementById('zoomLevel').textContent = `${Math.round(scale * 100)}%`;
+  }
+}, { passive: false });
+
+function zoomIn() {
+  const ns = Math.min(scale * 1.25, 3);
+  if (ns !== scale) { scale = ns; render(); updateZoomDisplay(); }
+}
+
+function zoomOut() {
+  const ns = Math.max(scale * 0.8, 0.25);
+  if (ns !== scale) { scale = ns; render(); updateZoomDisplay(); }
+}
+
+function zoomReset() {
+  scale = 1; render(); updateZoomDisplay();
+}
+
+function updateZoomDisplay() {
+  const el = document.getElementById('zoomLevel');
+  if (el) el.textContent = `${Math.round(scale * 100)}%`;
+}
+
+function nodeMouseDown(e, id) {
+  if (e.button !== 0) return;
+  const f = data.focuses.find(f => f.id === id);
+  if (!f) return;
+  nodeDragging = f;
+  e.target.closest('.node-group')?.classList.add('dragging');
+  e.preventDefault();
+}
+
+// ============================================================
+// AUTO LAYOUT
+// ============================================================
+function autoLayout() {
+  // Simple layout: arrange in tiers based on prerequisite depth
+  const depths = {};
+  function getDepth(id) {
+    if (depths[id] !== undefined) return depths[id];
+    const f = data.focuses.find(f => f.id === id);
+    if (!f || f.prerequisites.length === 0) { depths[id] = 0; return 0; }
+    let maxD = 0;
+    f.prerequisites.forEach(pid => {
+      const d = getDepth(pid) + 1;
+      if (d > maxD) maxD = d;
+    });
+    depths[id] = maxD;
+    return maxD;
+  }
+  data.focuses.forEach(f => getDepth(f.id));
+
+  // Group by depth
+  const byDepth = {};
+  Object.entries(depths).forEach(([id, d]) => {
+    if (!byDepth[d]) byDepth[d] = [];
+    byDepth[d].push(id);
+  });
+
+  Object.entries(byDepth).forEach(([depth, ids]) => {
+    const count = ids.length;
+    const startX = -Math.floor(count / 2);
+    ids.forEach((id, i) => {
+      const f = data.focuses.find(f => f.id === id);
+      if (f) {
+        f.x = startX + i;
+        f.y = parseInt(depth);
+        f.relativePositionId = ''; // positions are now absolute
+      }
+    });
+  });
+  render();
+  showToast('Фокусы выровнены', 'success');
+}
+
+// ============================================================
+// EXPORT / IMPORT
+// ============================================================
+function getUniqueIcons() {
+  const icons = new Set();
+  data.focuses.forEach(f => {
+    if (f.icon) icons.add(f.icon);
+  });
+  return [...icons];
+}
+
+function exportGFX() {
+  const usedIcons = getUniqueIcons();
+  if (usedIcons.length === 0) {
+    showToast('Нет иконок для экспорта', 'error');
+    return;
+  }
+  let out = `spriteTypes = {\n`;
+  usedIcons.forEach(iconId => {
+    const info = availableIcons.find(i => i.id === iconId);
+    if (!info || !info.hasImage || !info.imgUrl) return;
+    // Build filename from loaded icon info.label (actual filename) or getFileName fallback
+    const fname = (info && info.hasImage && info.label) ? info.label : (getFileName(iconId) || iconId.replace(/^GFX_/, ''));
+    const cleanName = fname.replace(/^icons\//, '').replace(/\.\w+$/, '');
+    out += `\tspriteType = {\n`;
+    out += `\t\tname = "${iconId}"\n`;
+    out += `\t\ttexturefile = "gfx/interface/goals/${cleanName}.dds"\n`;
+    	    out += `\t\tnoOfFrames = 1\n`;
+    	    out += `\t}\n`;
+    	  });
+  out += `}\n`;
+  downloadFile(out, `${data.treeId}_icons.gfx`, 'text/plain');
+  showToast('Экспорт .gfx выполнен', 'success');
+}
+
+function exportHOI4() {
+  // Validate for duplicate IDs first
+  const ids = data.focuses.map(f => f.id);
+  const dupes = ids.filter((id, i) => ids.indexOf(id) !== i);
+  if (dupes.length > 0) {
+    showToast('Ошибка: найдены дубликаты ID: ' + [...new Set(dupes)].join(', '), 'error');
+    return;
+  }
+
+  let out = `focus_tree = {\n`;
+  out += `\tid = ${data.treeId}\n\n`;
+  out += "\tcountry = {\n\t\tfactor = " + data.countryFactor + "\n";
+  if (data.countryTag && data.countryTag.trim()) {
+    out += "\t\tmodifier = {\n\t\t\tadd = 10\n\t\t\ttag = " + data.countryTag.trim() + "\n\t\t}\n";
+  }
+  out += "\t}\n\n";
+  if (data.default) out += `\tdefault = yes\n`;
+  if (!data.default) out += `\tdefault = no\n`;
+  if (data.resetOnCivilWar) out += `\treset_on_civilwar = no\n`;
+  out += `\n\tcontinuous_focus_position = { x = ${data.continuousX} y = ${data.continuousY} }\n\n`;
+  if (data.sharedFocus) {
+    out += `\tshared_focus = ${data.sharedFocus}\n\n`;
+  }
+
+  data.focuses.forEach(f => {
+    out += `\tfocus = {\n`;
+    out += `\t\tid = ${f.id}\n`;
+    // Ensure icon has GFX_ prefix
+    let icon = f.icon;
+    if (icon && !icon.startsWith('GFX_')) {
+      icon = 'GFX_' + icon;
+    }
+    out += `\t\ticon = ${icon || 'GFX_goal_generic_industry'}\n`;
+    if (f.prerequisites.length > 0) {
+      if (f.prerequisiteGroups && f.prerequisiteGroups.length > 1) {
+        // Multiple groups = OR prerequisites
+        f.prerequisiteGroups.forEach(group => {
+          if (group.length > 0) {
+            out += `\t\tprerequisite = { ${group.map(p => `focus = ${p}`).join(' ')} }\n`;
+          }
+        });
+      } else {
+        // Single group = AND prerequisites
+        out += `\t\tprerequisite = { ${f.prerequisites.map(p => `focus = ${p}`).join(' ')} }\n`;
+      }
+    }
+    out += `\t\tx = ${f.x}\n`;
+    out += `\t\ty = ${f.y}\n`;
+    if (f.relativePositionId) {
+      out += `\t\trelative_position_id = ${f.relativePositionId}\n`;
+    }
+    if (f.mutuallyExclusive.length > 0) {
+      out += `\t\tmutually_exclusive = { ${f.mutuallyExclusive.map(m => `focus = ${m}`).join(' ')} }\n`;
+    }
+    if (f.continuous) {
+      out += `\t\tcontinuous = yes\n`;
+    }
+    out += `\t\tcost = ${f.cost}\n`;
+    if (f.availableIfCapitulated) {
+      out += `\t\tavailable_if_capitulated = yes\n`;
+    }
+    if (f.bypass && f.bypass.trim()) {
+      out += `\t\tbypass = { ${f.bypass.trim()} }\n`;
+    }
+    if (f.searchFilters.length > 0) {
+      out += `\t\tsearch_filters = { ${f.searchFilters.join(' ')} }\n`;
+    }
+    if (f.available && f.available.trim()) {
+      out += `\t\tavailable = {\n${indent(f.available, 3)}\n\t\t}\n`;
+    }
+    if (f.allowBranch && f.allowBranch.trim()) {
+      out += `\t\tallow_branch = {\n${indent(f.allowBranch, 3)}\n\t\t}\n`;
+    }
+    if (f.aiWillDo && f.aiWillDo.trim()) {
+      out += `\t\tai_will_do = {\n${indent(f.aiWillDo, 3)}\n\t\t}\n`;
+    }
+    if (f.completionReward && f.completionReward.trim()) {
+      out += `\t\tcompletion_reward = {\n${indent(f.completionReward, 3)}\n\t\t}\n`;
+    } else {
+      // Always export at least a minimal reward to avoid errors
+      out += `\t\tcompletion_reward = {\n\t\t\tadd_political_power = 10\n\t\t}\n`;
+    }
+    out += `\t}\n\n`;
+  });
+
+  out += `}\n`;
+
+  // Download .txt
+  downloadFile(out, `${data.treeId}.txt`, 'text/plain');
+  
+  // Build .gfx for icons and download it too (always use fallback to avoid popup blocking)
+  const usedIcons = new Set();
+  data.focuses.forEach(f => {
+    let icon = f.icon;
+    if (icon && !icon.startsWith('GFX_')) icon = 'GFX_' + icon;
+    if (icon) usedIcons.add(icon);
+  });
+  
+  if (usedIcons.size > 0) {
+    let gfx = `spriteTypes = {
+`;
+    usedIcons.forEach(iconId => {
+      const fname = getFileName(iconId) || iconId.replace(/^GFX_/, '');
+      const cleanName = fname.replace(/^icons\//, '').replace(/\.\w+$/, '');
+      gfx += `\t\tspriteType = {\n`;
+      	    gfx += `\t\tname = "${iconId}"\n`;
+	gfx += `\t\ttexturefile = "gfx/interface/goals/${cleanName}.dds"\n`;
+		    gfx += `\t}\n`;
+		    // Add shine sprite (game looks for it)
+		    gfx += `\tspriteType = {\n`;
+		    gfx += `\t\tname = "${iconId}_shine"\n`;
+	gfx += `\t\ttexturefile = "gfx/interface/goals/${cleanName}.dds"\n`;
+		    gfx += `\t}\n`;
+		    // Add noFrame sprite
+		    gfx += `\tspriteType = {\n`;
+      	    gfx += `\t\tname = "${iconId}_noFrame"\n`;
+	gfx += `\t\ttexturefile = "gfx/interface/goals/${cleanName}.dds"\n`;
+		    gfx += `\t\tnoOfFrames = 1\n`;
+		    gfx += `\t}\n`;
+		  });
+    gfx += `}`;
+    
+    // Debug: show what's being exported
+    console.log('=== EXPORTED .GFX ===');
+    console.log(gfx);
+    console.log('=== END .GFX ===');
+    console.log('Icons:', [...usedIcons]);
+    
+    // Show the .gfx in a modal with download button (works from file://)
+    document.getElementById('gfxContent').value = gfx;
+    document.getElementById('gfxModal').classList.add('show');
+    showToast('Откройте модальное окно для сохранения .gfx файла', 'success');
+  }
+}
+
+function indent(text, level) {
+  const tab = '\t';
+  const prefix = tab.repeat(level);
+  return text.split('\n').map(line => prefix + line).join('\n');
+}
+
+function exportJSON() {
+  const json = JSON.stringify(data, null, 2);
+  downloadFile(json, `${data.treeId}_project.json`, 'application/json');
+  showToast('Проект сохранён', 'success');
+}
+
+function downloadFile(content, filename, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  setTimeout(() => {
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
+  }, 50);
+}
+
+function importFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const content = e.target.result;
+    if (file.name.endsWith('.json')) {
+      try {
+        const imported = JSON.parse(content);
+        // Validate basic structure
+        if (!imported.focuses || !imported.treeId) {
+          showToast('Неверный формат JSON проекта', 'error');
+          return;
+        }
+        // Detect duplicate IDs
+        const ids = imported.focuses.map(f => f.id);
+        const dupes = ids.filter((id, i) => ids.indexOf(id) !== i);
+        if (dupes.length > 0) {
+          showToast('Обнаружены дубликаты ID: ' + [...new Set(dupes)].join(', '), 'error');
+          return;
+        }
+        data = imported;
+        focusIdCounter = data.focuses.length + 1;
+        selectedId = null;
+        centerTree();
+        render();
+        loadFocusIcons();
+        checkIconBanner();
+        showToast(`Загружен проект: ${data.focuses.length} фокусов`, 'success');
+      } catch (err) {
+        showToast('Ошибка парсинга JSON: ' + err.message, 'error');
+      }
+    } else if (file.name.endsWith('.txt')) {
+      parseHOI4FocusFile(content);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function parseHOI4FocusFile(content) {
+  try {
+    // Simple parser for HOI4 focus files
+    const treeMatch = content.match(/focus_tree\s*=\s*\{/);
+    if (!treeMatch) {
+      showToast('Не найден focus_tree в файле', 'error');
+      return;
+    }
+
+    const newData = {
+      treeId: 'imported_tree',
+      default: false,
+      resetOnCivilWar: false,
+      continuousX: 0,
+      continuousY: 0,
+      countryFactor: 1,
+      sharedFocus: '',
+      focuses: []
+    };
+
+    // Extract tree id
+    const idMatch = content.match(/focus_tree\s*=\s*\{\s*\n\s*id\s*=\s*(\S+)/);
+    if (idMatch) newData.treeId = idMatch[1];
+
+    // Extract default
+    if (content.includes('default = yes')) newData.default = true;
+    if (content.includes('reset_on_civilwar = no')) newData.resetOnCivilWar = true;
+
+    // Extract continuous position
+    const cpMatch = content.match(/continuous_focus_position\s*=\s*\{\s*x\s*=\s*(-?\d+)\s*y\s*=\s*(-?\d+)/);
+    if (cpMatch) {
+      newData.continuousX = parseInt(cpMatch[1]);
+      newData.continuousY = parseInt(cpMatch[2]);
+    }
+
+    // Extract shared focus
+    const sfMatch = content.match(/shared_focus\s*=\s*(\S+)/);
+    if (sfMatch) newData.sharedFocus = sfMatch[1];
+
+    // Country factor
+    const cfMatch = content.match(/country\s*=\s*\{[^}]*factor\s*=\s*([\d.]+)/);
+    if (cfMatch) newData.countryFactor = parseFloat(cfMatch[1]);
+    
+    // Country tag
+    const tagMatch = content.match(/tag\s*=\s*(\S+)/);
+    if (tagMatch) newData.countryTag = tagMatch[1];
+
+    // Extract individual focuses - find all focus = { ... } blocks
+    const focusBlocks = extractBracedBlocks(content, 'focus');
+    focusBlocks.forEach(block => {
+      const f = createFocus(0, 0);
+      
+      const idM = block.match(/id\s*=\s*(\S+)/);
+      if (idM) f.id = idM[1];
+
+      const iconM = block.match(/icon\s*=\s*(\S+)/);
+      if (iconM) f.icon = iconM[1];
+
+      const xM = block.match(/x\s*=\s*(-?\d+)/);
+      const yM = block.match(/y\s*=\s*(-?\d+)/);
+      if (xM) f.x = parseInt(xM[1]);
+      if (yM) f.y = parseInt(yM[1]);
+
+      const rpM = block.match(/relative_position_id\s*=\s*(\S+)/);
+      if (rpM) f.relativePositionId = rpM[1];
+
+      const costM = block.match(/cost\s*=\s*(\d+)/);
+      if (costM) f.cost = parseInt(costM[1]);
+
+      if (block.includes('continuous = yes')) f.continuous = true;
+      if (block.includes('available_if_capitulated = yes')) f.availableIfCapitulated = true;
+
+      // Prerequisites - handle multiple blocks (each block is OR group)
+      const preqBlocks = extractAllBlocks(block, 'prerequisite');
+      f.prerequisiteGroups = [];
+      preqBlocks.forEach(pb => {
+        const focusRefs = pb.match(/focus\s*=\s*(\S+)/g);
+        if (focusRefs) {
+          const group = focusRefs.map(r => r.replace(/focus\s*=\s*/, '').trim());
+          f.prerequisiteGroups.push(group);
+          group.forEach(id => {
+            if (!f.prerequisites.includes(id)) f.prerequisites.push(id);
+          });
+        }
+      });
+
+      // Mutually exclusive
+      const mutexBlock = extractBlockContent(block, 'mutually_exclusive');
+      if (mutexBlock) {
+        const focusRefs = mutexBlock.match(/focus\s*=\s*(\S+)/g);
+        if (focusRefs) f.mutuallyExclusive = focusRefs.map(r => r.replace(/focus\s*=\s*/, '').trim());
+      }
+
+      // Search filters
+      const sfBlock = extractBlockContent(block, 'search_filters');
+      if (sfBlock) {
+        f.searchFilters = sfBlock.trim().split(/\s+/).filter(s => s);
+      }
+
+      // Bypass
+      const bypassMatch = block.match(/bypass\s*=\s*\{([^}]*)\}/);
+      if (bypassMatch) f.bypass = bypassMatch[1].trim();
+
+      // Available
+      const availMatch = extractBlockContent(block, 'available');
+      if (availMatch) f.available = availMatch;
+
+      // Allow branch
+      const allowMatch = extractBlockContent(block, 'allow_branch');
+      if (allowMatch) f.allowBranch = allowMatch;
+
+      // AI will do
+      const aiMatch = extractBlockContent(block, 'ai_will_do');
+      if (aiMatch) f.aiWillDo = aiMatch;
+
+      // Completion reward
+      const rewardMatch = extractBlockContent(block, 'completion_reward');
+      if (rewardMatch) f.completionReward = rewardMatch;
+
+      newData.focuses.push(f);
+    });
+
+    // Check for duplicate IDs
+    const parsedIds = newData.focuses.map(f => f.id);
+    const parsedDupes = parsedIds.filter((id, i) => parsedIds.indexOf(id) !== i);
+    if (parsedDupes.length > 0) {
+      showToast('Обнаружены дубликаты ID: ' + [...new Set(parsedDupes)].join(', '), 'error');
+      return;
+    }
+
+    // Update IDs
+    let maxId = 0;
+    newData.focuses.forEach(f => {
+      const num = parseInt(f.id.replace(/[^0-9]/g, ''));
+      if (num > maxId) maxId = num;
+    });
+    focusIdCounter = maxId + 1;
+
+    data = newData;
+    selectedId = null;
+    centerTree();
+    render();
+    loadFocusIcons();
+    checkIconBanner();
+    showToast(`Импортировано ${data.focuses.length} фокусов`, 'success');
+
+  } catch (err) {
+    showToast('Ошибка парсинга: ' + err.message, 'error');
+  }
+}
+
+function extractBracedBlocks(content, keyword) {
+  const blocks = [];
+  // Remove comments first to avoid matching inside commented blocks
+  const clean = content.replace(/#[^\n]*/g, '');
+  const regex = new RegExp(`${keyword}\\s*=\\s*\\{`, 'g');
+  let match;
+  while ((match = regex.exec(clean)) !== null) {
+    const start = match.index + match[0].length - 1;
+    let depth = 1;
+    let pos = start + 1;
+    while (depth > 0 && pos < clean.length) {
+      if (clean[pos] === '{') depth++;
+      if (clean[pos] === '}') depth--;
+      pos++;
+    }
+    const blockContent = clean.substring(start + 1, pos - 1);
+    blocks.push(blockContent);
+  }
+  return blocks;
+}
+
+function extractBlockContent(block, keyword) {
+  const regex = new RegExp(`${keyword}\\s*=\\s*\\{`);
+  const match = regex.exec(block);
+  if (!match) return '';
+  const start = match.index + match[0].length - 1;
+  let depth = 1;
+  let pos = start + 1;
+  while (depth > 0 && pos < block.length) {
+    if (block[pos] === '{') depth++;
+    if (block[pos] === '}') depth--;
+    pos++;
+  }
+  return block.substring(start + 1, pos - 1).trim();
+}
+
+// Extract ALL blocks matching a keyword (e.g., multiple prerequisite blocks)
+function extractAllBlocks(content, keyword) {
+  const results = [];
+  const clean = content.replace(/#[^\n]*/g, '');
+  const regex = new RegExp(`${keyword}\\s*=\\s*\\{`, 'g');
+  let match;
+  while ((match = regex.exec(clean)) !== null) {
+    const start = match.index + match[0].length - 1;
+    let depth = 1;
+    let pos = start + 1;
+    while (depth > 0 && pos < clean.length) {
+      if (clean[pos] === '{') depth++;
+      if (clean[pos] === '}') depth--;
+      pos++;
+    }
+    results.push(clean.substring(start + 1, pos - 1));
+  }
+  return results;
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+function showSettings() {
+  document.getElementById('settingsModal').classList.add('show');
+  document.getElementById('settingsBody').innerHTML = renderTreeSettings();
+}
+
+function saveSettings() {
+  closeModal('settingsModal');
+  render();
+  showToast('Настройки сохранены', 'success');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+function downloadGFX() {
+  const gfx = document.getElementById('gfxContent').value;
+  const blob = new Blob([gfx], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${data.treeId}_focus_icons.gfx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast('Скачан .gfx', 'success');
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast' + (type ? ' ' + type : '');
+  el.classList.add('show');
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ============================================================
+// CONTEXT MENU & CLIPBOARD
+// ============================================================
+let clipboardFocus = null;
+let contextMenuTarget = null;
+
+function showContextMenu(e, id) {
+  e.preventDefault();
+  contextMenuTarget = id;
+  showContextMenuAt(e.clientX, e.clientY, true);
+}
+
+function showContextMenuAt(x, y, nodeMode) {
+  const menu = document.getElementById('contextMenu');
+  document.querySelectorAll('.context-item-node').forEach(el => {
+    el.style.display = nodeMode ? '' : 'none';
+  });
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+  menu.classList.add('show');
+  // Hide when clicking OUTSIDE the menu
+  setTimeout(() => {
+    const handler = (e) => {
+      if (!menu.contains(e.target)) {
+        hideContextMenu();
+        document.removeEventListener('mousedown', handler);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+  }, 20);
+}
+
+function hideContextMenu() {
+  document.getElementById('contextMenu').classList.remove('show');
+}
+
+function contextMenuAction(action) {
+  hideContextMenu();
+  const targetId = contextMenuTarget;
+  const sel = data.focuses.find(f => f.id === (targetId || selectedId));
+  
+  switch(action) {
+    case 'add':
+      addFocus();
+      if (targetId && selectedId) {
+        const newF = data.focuses.find(f => f.id === selectedId);
+        const parent = data.focuses.find(f => f.id === targetId);
+        if (newF && parent) {
+          newF.x = parent.x;
+          newF.y = parent.y + 1;
+          newF.prerequisites = [targetId];
+        }
+      }
+      render();
+      break;
+    case 'copy':
+      if (sel) {
+        clipboardFocus = JSON.parse(JSON.stringify(sel));
+        showToast(`Скопирован: ${clipboardFocus.id}`, 'success');
+      }
+      break;
+    case 'paste':
+      if (!clipboardFocus) { showToast('Нет скопированного фокуса', 'error'); return; }
+      const paste = JSON.parse(JSON.stringify(clipboardFocus));
+      let pasteId = clipboardFocus.id + '_copy';
+      let pasteSuffix = 0;
+      while (data.focuses.some(f => f.id === pasteId)) {
+        pasteSuffix++;
+        pasteId = clipboardFocus.id + '_copy' + pasteSuffix;
+      }
+      paste.id = pasteId;
+      paste.x += 2; paste.y += 1;
+      paste.relativePositionId = ''; paste.prerequisites = []; paste.mutuallyExclusive = [];
+      data.focuses.push(paste);
+      selectedId = paste.id;
+      render();
+      showToast(`Вставлен: ${paste.id}`, 'success');
+      break;
+    case 'delete':
+      if (targetId) deleteFocus(targetId);
+      else if (selectedId) deleteSelected();
+      break;
+    case 'duplicate':
+      if (!sel) return;
+      const dup = JSON.parse(JSON.stringify(sel));
+      let dupId = sel.id + '_dup';
+      let dupSuffix = 0;
+      while (data.focuses.some(f => f.id === dupId)) {
+        dupSuffix++;
+        dupId = sel.id + '_dup' + dupSuffix;
+      }
+      dup.id = dupId;
+      dup.x += 2; dup.y += 1;
+      dup.relativePositionId = ''; dup.prerequisites = []; dup.mutuallyExclusive = [];
+      data.focuses.push(dup);
+      selectedId = dup.id;
+      render();
+      showToast(`Дублирован: ${dup.id}`, 'success');
+      break;
+    case 'rename':
+      if (sel) editFocusName(sel.id);
+      break;
+  }
+}
+
+function editFocusName(id) {
+  const f = data.focuses.find(f => f.id === id);
+  if (!f) return;
+  const newId = prompt('Новый ID фокуса:', f.id);
+  if (newId && newId !== f.id) {
+    // Check if already exists
+    if (data.focuses.find(x => x.id === newId)) {
+      showToast('Фокус с таким ID уже существует', 'error');
+      return;
+    }
+    // Update references
+    data.focuses.forEach(x => {
+      x.prerequisites = x.prerequisites.map(p => p === f.id ? newId : p);
+      x.mutuallyExclusive = x.mutuallyExclusive.map(m => m === f.id ? newId : m);
+    });
+    f.id = newId;
+    selectedId = newId;
+    render();
+    showToast(`ID изменён: ${newId}`, 'success');
+  }
+}
+
+// ============================================================
+// CUSTOM AUTOCOMPLETE
+// ============================================================
+let _acPrevValue = '';
+
+function setupAutocomplete() {
+  document.addEventListener('focusin', e => {
+    const input = e.target.closest('.ac-input');
+    setTimeout(() => {
+      if (document.activeElement !== input) return;
+      if (input) {
+        _acPrevValue = input.value;
+        showAcDropdown(input);
+      }
+    }, 50);
+  });
+  document.addEventListener('input', e => {
+    if (!e.target.classList.contains('ac-input')) return;
+    showAcDropdown(e.target);
+  });
+  document.addEventListener('mousedown', e => {
+    const option = e.target.closest('.ac-option');
+    if (!option) return;
+    e.preventDefault();
+    const dropdown = option.closest('.ac-dropdown');
+    const wrapper = dropdown.closest('.ac-wrapper');
+    const input = wrapper.querySelector('.ac-input');
+    input.value = option.dataset.value;
+    closeAcDropdowns();
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  document.addEventListener('blur', e => {
+    const input = e.target.closest('.ac-input');
+    if (!input) return;
+    setTimeout(() => {
+      if (document.activeElement === input) return;
+      if (!document.body.contains(input)) return;
+      const options = parseOptions(input.dataset.options);
+      const val = input.value.trim();
+      if (val && !options.includes(val)) {
+        input.value = _acPrevValue || '';
+        _acPrevValue = '';
+      } else {
+        _acPrevValue = val;
+      }
+      closeAcDropdowns();
+    }, 200);
+  }, true);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeAcDropdowns();
+  });
+}
+
+function showAcDropdown(input) {
+  const wrapper = input.closest('.ac-wrapper');
+  if (!wrapper) return;
+  const dropdown = wrapper.querySelector('.ac-dropdown');
+  if (!dropdown) return;
+  try {
+    const options = parseOptions(input.dataset.options);
+    const val = input.value;
+    const lowerVal = val.toLowerCase().trim();
+    const filtered = options.filter(o => o.toLowerCase().includes(lowerVal));
+    if (filtered.length === 0) {
+      dropdown.innerHTML = '<div class="ac-empty">Нет совпадений</div>';
+      dropdown.classList.add('show');
+      return;
+    }
+    dropdown.innerHTML = filtered.map(o => {
+      if (lowerVal && o.toLowerCase().includes(lowerVal)) {
+        const idx = o.toLowerCase().indexOf(lowerVal);
+        const before = escXml(o.slice(0, idx));
+        const match = escXml(o.slice(idx, idx + lowerVal.length));
+        const after = escXml(o.slice(idx + lowerVal.length));
+        return '<div class="ac-option" data-value="' + escXml(o) + '">' + before + '<span class="ac-match">' + match + '</span>' + after + '</div>';
+      }
+      return '<div class="ac-option" data-value="' + escXml(o) + '">' + escXml(o) + '</div>';
+    }).join('');
+    dropdown.classList.add('show');
+  } catch(e) {
+    dropdown.classList.remove('show');
+  }
+}
+
+function closeAcDropdowns() {
+  document.querySelectorAll('.ac-dropdown.show').forEach(d => d.classList.remove('show'));
+}
+
+function parseOptions(json) {
+  try { return JSON.parse(json) || []; } catch(e) { return []; }
+}
+
+// ============================================================
+// KEYBOARD SHORTCUTS
+// ============================================================
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  hideContextMenu();
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (selectedId) deleteSelected();
+  }
+  if (e.key === 'a' && e.ctrlKey) {
+    e.preventDefault();
+    addFocus();
+  }
+  if (e.key === 'c' && e.ctrlKey) {
+    e.preventDefault();
+    contextMenuTarget = selectedId;
+    ctxCopy();
+  }
+  if (e.key === 'v' && e.ctrlKey) {
+    e.preventDefault();
+    ctxPaste();
+  }
+  if (e.key === 'd' && e.ctrlKey) {
+    e.preventDefault();
+    const f = selectedId ? data.focuses.find(x => x.id === selectedId) : null;
+    if (f) { contextMenuTarget = selectedId; ctxDuplicate(); }
+  }
+  if (e.key === 's' && e.ctrlKey) {
+    e.preventDefault();
+    exportJSON();
+  }
+  if (e.key === 'e' && e.ctrlKey) {
+    e.preventDefault();
+    exportHOI4();
+  }
+  // Escape = exit link mode
+  if (e.key === 'Escape') {
+    exitLinkMode();
+  }
+});
+
+// ============================================================
+// INIT
+// ============================================================
+// Init custom autocomplete
+setupAutocomplete();
+
+// Load background and frame textures
+loadBackground();
+loadFrameTexture();
+
+// Add some demo focuses (using unique GER_ prefix to avoid DLC conflicts)
+data.focuses.push({
+  id: 'GER_industrial_effort',
+  icon: 'GFX_goal_generic_industry',
+  x: 0, y: 0,
+  relativePositionId: '',
+  cost: 10,
+  prerequisites: [],
+  mutuallyExclusive: [],
+  bypass: '',
+  availableIfCapitulated: false,
+  searchFilters: ['FOCUS_FILTER_INDUSTRY'],
+  available: '',
+  allowBranch: '',
+  aiWillDo: 'factor = 10',
+  completionReward: 'add_political_power = 100\nadd_stability = 0.05',
+  continuous: false,
+  memo: ''
+});
+data.focuses.push({
+  id: 'GER_army_effort',
+  icon: 'GFX_goal_generic_allies_build_infantry',
+  x: -2, y: 1,
+  relativePositionId: 'GER_industrial_effort',
+  cost: 10,
+  prerequisites: ['GER_industrial_effort'],
+  mutuallyExclusive: [],
+  bypass: '',
+  availableIfCapitulated: true,
+  searchFilters: ['FOCUS_FILTER_RESEARCH'],
+  available: '',
+  allowBranch: '',
+  aiWillDo: 'factor = 10',
+  completionReward: 'army_experience = 25\nadd_doctrine_cost_reduction = {\n\tname = land_doc_bonus\n\tcost_reduction = 0.5\n\tuses = 1\n\tcategory = land_doctrine\n}',
+  continuous: false,
+  memo: ''
+});
+data.focuses.push({
+  id: 'GER_naval_effort',
+  icon: 'GFX_goal_generic_allies_navy',
+  x: 2, y: 1,
+  relativePositionId: 'GER_industrial_effort',
+  cost: 10,
+  prerequisites: ['GER_industrial_effort'],
+  prerequisiteGroups: [['GER_industrial_effort']],
+  mutuallyExclusive: ['GER_army_effort'],
+  bypass: '',
+  availableIfCapitulated: false,
+  searchFilters: ['FOCUS_FILTER_RESEARCH'],
+  available: '',
+  allowBranch: '',
+  aiWillDo: 'factor = 5',
+  completionReward: 'navy_experience = 25',
+  continuous: false,
+  memo: ''
+});
+focusIdCounter = 10;
+
+selectedId = data.focuses[0].id;
+centerTree();
+render();
+
+// Handle window resize
+window.addEventListener('resize', render);
+</script>
+</body>
+</html>

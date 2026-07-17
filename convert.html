@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TFHoi4 — Конвертер</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; font-family: 'Segoe UI', system-ui, sans-serif; color: #e8ddd0; }
+body { padding: 30px; display: flex; flex-direction: column; align-items: center; background: #0a0a1a; background-image: url('materials/strategic_destruction_bg.png'); background-size: cover; background-position: center; background-attachment: fixed; }
+body::before { content: ''; position: fixed; inset: 0; background: rgba(10,10,26,0.7); z-index: -1; }
+
+h1 { font-size: 28px; margin-bottom: 20px; color: #c49a6c; }
+
+.upload-area {
+  width: 400px; padding: 40px; border: 2px dashed #3a3028; border-radius: 12px;
+  text-align: center; cursor: pointer; transition: all .2s;
+}
+.upload-area:hover { border-color: #c49a6c; background: rgba(196,154,108,0.05); }
+.upload-area .big-icon { font-size: 48px; margin-bottom: 12px; }
+.upload-area p { color: #8a7a6a; font-size: 14px; }
+
+.preview-container { display: none; margin-top: 20px; gap: 20px; align-items: start; }
+.preview-container.show { display: flex; }
+.preview-box { text-align: center; }
+.preview-box img { max-width: 128px; max-height: 128px; border-radius: 6px; border: 1px solid #3a3028; }
+.preview-box .label { font-size: 12px; color: #8a7a6a; margin-top: 6px; }
+
+.options { margin-top: 20px; display: none; flex-direction: column; gap: 12px; width: 400px; }
+.options.show { display: flex; }
+.option-row { display: flex; gap: 10px; align-items: center; }
+.option-row label { font-size: 13px; color: #b8a99a; min-width: 100px; }
+.option-row select, .option-row input { flex: 1; padding: 8px 12px; background: #1e1a16; border: 1px solid #3a3028; border-radius: 6px; color: #e8ddd0; font-size: 13px; }
+.option-row select:focus, .option-row input:focus { outline: none; border-color: #c49a6c; }
+
+.convert-btn {
+  display: none; padding: 14px 40px; margin-top: 20px;
+  background: #c49a6c; border: none; border-radius: 8px; color: #0a0a1a;
+  font-size: 16px; font-weight: 600; cursor: pointer;
+  transition: opacity .2s;
+}
+.convert-btn:hover { opacity: .85; }
+.convert-btn.show { display: block; }
+
+.back-link {
+  margin-top: 24px; color: #6a5a4a; text-decoration: none; font-size: 13px;
+  transition: color .2s;
+}
+.back-link:hover { color: #c49a6c; }
+
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  padding: 10px 24px; border-radius: 6px; font-size: 14px; z-index: 9999;
+  background: #2a241e; color: #e8ddd0; border: 1px solid #3a3028;
+  box-shadow: 0 4px 20px rgba(0,0,0,.4); opacity: 0; transition: opacity .3s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<h1>TFHoi4 — Конвертер</h1>
+
+<div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+  <div class="big-icon">🖼</div>
+  <p>Нажмите, чтобы выбрать PNG</p>
+  <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp,image/bmp" style="display:none" onchange="loadImage(event)">
+</div>
+
+<div class="preview-container" id="previewContainer">
+  <div class="preview-box">
+    <img id="originalPreview">
+    <div class="label">Оригинал</div>
+  </div>
+</div>
+
+<div class="options" id="options">
+  <div class="option-row">
+    <label>Формат</label>
+    <select id="formatSelect">
+      <option value="dxt1">DXT1 (BC1) — без альфа</option>
+      <option value="dxt5" selected>DXT5 (BC3) — с альфа</option>
+      <option value="tga">TGA (True Vision)</option>
+    </select>
+  </div>
+  <div class="option-row">
+    <label>Тип</label>
+    <select id="typeSelect">
+      <option value="dds">.dds</option>
+    </select>
+  </div>
+</div>
+
+<button class="convert-btn" id="convertBtn" onclick="convert()">Конвертировать</button>
+
+<div class="toast" id="toast"></div>
+
+<a class="back-link" href="main.html">← Назад</a>
+
+<script>
+let currentImage = null;
+let currentFileName = '';
+
+function loadImage(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  currentFileName = file.name.replace(/\.[^.]+$/, '');
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      currentImage = img;
+      document.getElementById('originalPreview').src = e.target.result;
+      document.getElementById('previewContainer').classList.add('show');
+      document.getElementById('options').classList.add('show');
+      document.getElementById('convertBtn').classList.add('show');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function rgbaToDXT1(pixels, w, h) {
+  const bw = Math.max(1, Math.ceil(w / 4));
+  const bh = Math.max(1, Math.ceil(h / 4));
+  const blocks = new Uint8Array(bw * bh * 8);
+  let off = 0;
+  for (let by = 0; by < bh; by++) {
+    for (let bx = 0; bx < bw; bx++) {
+      let minR = 255, minG = 255, minB = 255;
+      let maxR = 0, maxG = 0, maxB = 0;
+      for (let py = 0; py < 4; py++) {
+        for (let px = 0; px < 4; px++) {
+          const x = bx * 4 + px, y = by * 4 + py;
+          if (x < w && y < h) {
+            const i = (y * w + x) * 4;
+            minR = Math.min(minR, pixels[i]);
+            minG = Math.min(minG, pixels[i+1]);
+            minB = Math.min(minB, pixels[i+2]);
+            maxR = Math.max(maxR, pixels[i]);
+            maxG = Math.max(maxG, pixels[i+1]);
+            maxB = Math.max(maxB, pixels[i+2]);
+          }
+        }
+      }
+      const c0 = ((maxR >> 3) << 11) | ((maxG >> 2) << 5) | (maxB >> 3);
+      const c1 = ((minR >> 3) << 11) | ((minG >> 2) << 5) | (minB >> 3);
+      blocks[off] = c0 & 0xFF; blocks[off+1] = (c0 >> 8) & 0xFF;
+      blocks[off+2] = c1 & 0xFF; blocks[off+3] = (c1 >> 8) & 0xFF;
+      let bits = 0;
+      for (let py = 0; py < 4; py++) {
+        for (let px = 0; px < 4; px++) {
+          const x = bx * 4 + px, y = by * 4 + py;
+          let idx = 0;
+          if (x < w && y < h) {
+            const i = (y * w + x) * 4;
+            const r = pixels[i], g = pixels[i+1], b = pixels[i+2];
+            const d0 = (r-maxR)*(r-maxR)+(g-maxG)*(g-maxG)+(b-maxB)*(b-maxB);
+            const d1 = (r-minR)*(r-minR)+(g-minG)*(g-minG)+(b-minB)*(b-minB);
+            idx = (d1 < d0) ? 1 : 0;
+          }
+          bits |= (idx << (2 * (py * 4 + px)));
+        }
+      }
+      blocks[off+4] = bits & 0xFF; blocks[off+5] = (bits >> 8) & 0xFF;
+      blocks[off+6] = (bits >> 16) & 0xFF; blocks[off+7] = (bits >> 24) & 0xFF;
+      off += 8;
+    }
+  }
+  return blocks;
+}
+
+function createDDS(pixels, w, h, format) {
+  const fourCC = format === 'dxt5' ? 'DXT5' : 'DXT1';
+  const blockSize = format === 'dxt5' ? 16 : 8;
+  const bw = Math.max(1, Math.ceil(w / 4));
+  const bh = Math.max(1, Math.ceil(h / 4));
+  const dataSize = bw * bh * blockSize;
+  const header = new Uint8Array(128);
+  // DDS magic
+  header[0] = 0x44; header[1] = 0x44; header[2] = 0x53; header[3] = 0x20;
+  // Size
+  const dv = new DataView(header.buffer);
+  dv.setUint32(4, 124, true); // dwSize
+  dv.setUint32(8, 0x1007, true); // flags
+  dv.setUint32(12, h, true); // height
+  dv.setUint32(16, w, true); // width
+  dv.setUint32(20, dataSize, true); // pitchOrLinearSize
+  dv.setUint32(24, 0, true); // depth
+  dv.setUint32(28, 0, true); // mipmapCount
+  dv.setUint32(76, 0x4, true); // pfFlags (DDPF_FOURCC)
+  // FourCC
+  header[80] = 0x20; header[81] = 0x00; header[82] = 0x00; header[83] = 0x00; // dwRGBBitCount
+  header[84] = fourCC.charCodeAt(0); header[85] = fourCC.charCodeAt(1);
+  header[86] = fourCC.charCodeAt(2); header[87] = fourCC.charCodeAt(3);
+  dv.setUint32(108, 0x1000, true); // dwCaps
+  
+  const blocks = rgbaToDXT1(pixels, w, h);
+  const result = new Uint8Array(128 + blocks.length);
+  result.set(header);
+  result.set(blocks, 128);
+  return result;
+}
+
+function createTGA(pixels, w, h) {
+  // TGA format: uncompressed RGBA
+  const header = new Uint8Array(18);
+  header[2] = 2; // uncompressed RGB
+  header[12] = w & 0xFF; header[13] = (w >> 8) & 0xFF;
+  header[14] = h & 0xFF; header[15] = (h >> 8) & 0xFF;
+  header[16] = 32; // 32 bits per pixel
+  header[17] = 0x28; // 8-bit alpha
+  
+  // BGRA pixel data (TGA uses BGR order)
+  const pixelData = new Uint8Array(w * h * 4);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const si = ((h - 1 - y) * w + x) * 4; // TGA is bottom-up
+      const di = (y * w + x) * 4;
+      pixelData[di] = pixels[si + 2];     // B
+      pixelData[di + 1] = pixels[si + 1]; // G
+      pixelData[di + 2] = pixels[si];     // R
+      pixelData[di + 3] = pixels[si + 3]; // A
+    }
+  }
+  
+  const result = new Uint8Array(18 + pixelData.length);
+  result.set(header);
+  result.set(pixelData, 18);
+  return result;
+}
+
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function convert() {
+  if (!currentImage) return;
+  const format = document.getElementById('formatSelect').value;
+  const canvas = document.createElement('canvas');
+  canvas.width = currentImage.width;
+  canvas.height = currentImage.height;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(currentImage, 0, 0);
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  
+  let fileData, ext, mime;
+  if (format === 'tga') {
+    fileData = createTGA(imgData.data, canvas.width, canvas.height);
+    ext = 'tga'; mime = 'application/octet-stream';
+  } else {
+    fileData = createDDS(imgData.data, canvas.width, canvas.height, format);
+    ext = 'dds'; mime = 'application/octet-stream';
+  }
+  
+  const blob = new Blob([fileData], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = currentFileName + '.' + ext;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Сохранено: ' + a.download);
+}
+</script>
+</body>
+</html>
